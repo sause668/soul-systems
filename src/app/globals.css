@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0c0f14;
+  --foreground: #e8ecf1;
+  --muted: #8b98a8;
+  --panel: #141a22;
+  --border: #243044;
+  --accent: #3b82f6;
+  --accent-muted: #1e3a5f;
+  --warning: #f59e0b;
+  --critical: #ef4444;
+  --success: #22c55e;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #f4f6f9;
+    --foreground: #0f172a;
+    --muted: #64748b;
+    --panel: #ffffff;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent-muted: #dbeafe;
+    --warning: #d97706;
+    --critical: #dc2626;
+    --success: #16a34a;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-warn {
+  background: color-mix(in srgb, var(--warning) 20%, transparent);
+  color: var(--warning);
+}
+
+.badge-crit {
+  background: color-mix(in srgb, var(--critical) 22%, transparent);
+  color: var(--critical);
+}
+
+.badge-ok {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  color: var(--success);
+}
+
+.badge-neutral {
+  background: var(--accent-muted);
+  color: var(--accent);
+}

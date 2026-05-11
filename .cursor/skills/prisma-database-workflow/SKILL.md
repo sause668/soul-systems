@@ -28,7 +28,7 @@ Review `prisma/migrations/<timestamp>_<name>/migration.sql`. Commit schema + mig
 npx prisma generate
 ```
 
-Align output with imports (e.g. `@/app/generated/prisma/client` per project).
+Align output with imports (this repo: `@/app/generated/prisma/client/client` for Prisma 7).
 
 ## Seed
 
