@@ -1,0 +1,32 @@
+### Soul Systems — example HTTP calls (cookie session from browser, or copy Cookie header after login)
+
+@base = http://localhost:3000
+
+### Live SSE stream (browser EventSource or curl -N)
+GET {{base}}/api/events
+
+### Departments
+GET {{base}}/api/v1/departments
+
+### Jobs (paginated)
+GET {{base}}/api/v1/jobs?page=1&limit=10&status=IN_PROGRESS
+
+### Processes (optional filters)
+GET {{base}}/api/v1/processes?departmentId=1
+GET {{base}}/api/v1/processes?jobId=1
+
+### Blueprints with routing templates
+GET {{base}}/api/v1/blueprints
+
+### Computed scheduling alerts
+GET {{base}}/api/v1/alerts
+GET {{base}}/api/v1/alerts?departmentId=1
+
+### Inventory search
+GET {{base}}/api/v1/inventory?q=TABLE
+
+### Analytics (admin session required)
+GET {{base}}/api/v1/analytics/summary
+
+### Logout (clears session cookie)
+POST {{base}}/api/v1/auth/logout
