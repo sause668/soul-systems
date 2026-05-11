@@ -1,0 +1,89 @@
+---
+description: Site-wide modal setup, portal structure, and colocated modal folders (context + Gradebook pattern)
+globs: "{src/app/layout.tsx,src/app/(_home)/_context/Modal.tsx,src/app/(_home)/_components/OpenModalComponents/**/*.tsx,src/app/**/_components/**/Modals/**/*.tsx}"
+alwaysApply: false
+---
+
+# Modal Setup and Structure
+
+For **adding a new modal body and wiring triggers**, use `.cursor/skills/add-feature-modal/SKILL.md`.
+
+This App uses **one** global modal system: context and portal live in `@/app/(_home)/_context/Modal`, and domain UIs colocate modal bodies under a feature `Modals/` tree (see `@/app/(classes)/_components/Gradebook/**`).
+
+## 1) Root setup (required once)
+
+In `src/app/layout.tsx`:
+
+- Import `ModalProvider` and `Modal` from `@/app/(_home)/_context/Modal`.
+- Wrap the app body (or the subtree that includes all routes that open modals) in `ModalProvider`.
+- Render **exactly one** `<Modal />` as a **sibling** of `{children}` (and other shell UI), still **inside** `ModalProvider` so the portal target ref exists.
+
+Do not add a second `ModalProvider` or a second global `<Modal />` elsewhere.
+
+## 2) Context module (`@/app/(_home)/_context/Modal.tsx`)
+
+**Exports:**
+
+- `ModalProvider` — holds `modalRef`, `modalContent`, `setModalContent`, `setOnModalClose`, `closeModal`; renders `children` plus a trailing `<div ref={modalRef} />` used as the portal mount node.
+- `Modal` — reads context; when `modalRef.current` and `modalContent` are set, portals overlay + `#modal-content` shell and renders `modalContent` inside it. Backdrop click calls `closeModal`.
+- `useModal` — components under the provider use this to open/close or register close callbacks.
+
+**Behavioral rules:**
+
+- Opening: callers set content with `setModalContent(ReactNode)` (typically JSX for a modal body component).
+- Optional `setOnModalClose(callback)` runs once when the modal closes (clear order: set callback **before** content when using the OpenModal helpers).
+- `closeModal` clears content and invokes the close callback if present.
+
+Do not reimplement `createPortal` for the same overlay UX outside this module.
+
+## 3) Standard open triggers (`@/app/(_home)/_components/OpenModalComponents`)
+
+- **`OpenModalButton`** — `modalComponent`, `buttonText`, optional `onButtonClick`, `onModalClose`, `cssClasses`. On click: optionally `setOnModalClose`, then `setModalContent`, then `onButtonClick`.
+- **`OpenModalTableCell`** — same idea for table cells (`cellText`, `modalComponent`, etc.).
+
+Prefer these components over hand-rolling `useModal` + click handlers unless the trigger is not a button/cell or needs materially different behavior.
+
+## 4) Feature layout: where modals live
+
+Under a large feature such as `Gradebook/`:
+
+- **Root feature file** (`Gradebook.tsx`) composes sections (`Header`, `Options`, `Grades`, …); it does **not** need to list every modal—sections open them.
+- **Section files** (`Grades.tsx`, `Groups.tsx`, `Options.tsx`, …) import `OpenModalButton` / `OpenModalTableCell` and pass **`modalComponent={<SomeModal ... />}`** with the props that modal needs (ids, entities, `courseId`, etc.).
+- **Modal bodies** live under a dedicated folder:
+
+```text
+Gradebook/
+  Modals/
+    AssignmentModals/   # NewAssignmentModal, UpdateAssignmentModal, DeleteAssignmentModal, AssignmentInfoModal, …
+    GradeModals/        # CreateGradeModal, EditGradeModal, DeleteGradeModal, …
+    BehaviorModals/
+    GroupModals/
+```
+
+**Naming:** group by **domain entity** (Assignment, Grade, Behavior, Group), then by action (`Create`, `Edit`, `Delete`, `Info`) in PascalCase filenames.
+
+**Imports inside modals:**
+
+- `useModal` from `@/app/(_home)/_context/Modal` for `closeModal` after successful server actions or explicit cancel.
+- Server actions from the route group’s `_actions` (e.g. `@/app/(classes)/_actions/grade-actions`).
+- Shared styles: relative import to feature CSS when needed (e.g. `"../../Gradebook.css"` from nested modal files).
+
+## 5) What a modal body file should contain
+
+- `'use client'` at top when using hooks (`useState`, `useTransition`, `useModal`, forms).
+- **Narrow props** — only ids and data required to render the form or confirm dialog (avoid passing entire page payloads when a few fields suffice).
+- **Submit flow** — validate (client and/or server action return shape), call server action, on success call `closeModal()`; on validation errors, set local error state; on hard failure, show message and optionally keep modal open.
+- **Nested opens** — some modals embed `OpenModalButton` to chain another modal (e.g. edit flows); keep nesting shallow and predictable.
+
+## 6) Styling and shell
+
+- Global overlay chrome (`#modal`, `#modal-background`, `#modal-content`) is owned by `Modal.tsx`; **do not** duplicate full-screen fixed overlays inside modal body components unless it is a deliberate sub-dialog pattern.
+- Modal **inner** layout (forms, titles, buttons) uses feature tokens/classes; colocate feature-level modal styling in the feature CSS file when shared across many modals in that feature.
+
+## 7) Checklist for new site-wide modals
+
+1. Confirm root layout still has single `ModalProvider` + `<Modal />`.
+2. Add modal component under the feature’s `Modals/<Entity>Modals/` folder.
+3. Open from a section via `OpenModalButton` or `OpenModalTableCell` with JSX `modalComponent`.
+4. Close from the modal via `closeModal()` after success (or rely on backdrop for dismiss-only flows).
+5. Register `onModalClose` only when the opener must refresh data or run cleanup after dismiss.

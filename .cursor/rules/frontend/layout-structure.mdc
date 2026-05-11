@@ -1,0 +1,76 @@
+---
+description: How to write and structure App Router layouts—root shell, metadata, providers, and children composition
+globs: "{src/app/**/layout.tsx}"
+alwaysApply: false
+---
+
+# Layout Structure
+
+<!-- Use `src/app/layout.tsx` (import as `@/app/layout.tsx`) as the reference for the **root** layout.  -->
+Nested segment layouts follow the same structural ideas: minimal shell, clear provider boundaries, `{children}` where the route tree renders.
+
+## 1) Role of a layout file
+
+- A `layout.tsx` file defines **shared UI and wrappers** for a segment and all nested routes.
+- It **must** export a default component that accepts `{ children }` (and optional parallel route slots if the app uses them).
+- Layouts are **Server Components** by default; keep them async when you need server-only setup at this boundary (the root layout is `async` in this project).
+
+**Do not** put large page-specific feature markup in a layout—keep that in `page.tsx` and `_components`.
+
+## 2) Root layout: import order (reference)
+
+Group imports in a stable order:
+
+1. Next types (`Metadata`, `Viewport`) and React primitives (`Suspense`) as needed.
+2. App-wide assets: `@/app/lib/fonts`, global CSS (`./globals.css`).
+3. Cross-cutting providers and shell: `@/app/(_home)/_context/Modal`, `@/app/(_home)/_components/NavBar/NavBarShell`.
+
+## 3) Metadata and viewport
+
+- Export **`metadata`** (`title`, `description`, and other `Metadata` fields) from the root layout so the whole app inherits defaults.
+- Export **`viewport`** when you need device scaling policy (this project sets width, scale, and `userScalable`).
+
+Segment-specific layouts can export their own `metadata` / `generateMetadata` to override or extend for that subtree.
+
+## 4) Document structure
+
+- Render **exactly one** `<html>` and **one** `<body>` in the root layout.
+- Set **`lang`** on `<html>` appropriately (`lang="en"` in the reference).
+- Apply **body-level** concerns on `<body>`:
+  - All `next/font` **`.variable`** classes so CSS variables exist app-wide.
+  - Global Tailwind utilities from the design system (`antialiased`, `min-h-screen`, `bg-screenWhite`, `font-body`, etc.).
+
+Do not duplicate `<html>`/`<body>` in nested layouts.
+
+## 5) Provider and shell composition (reference)
+
+Inside `<body>`, order matters for UX and context:
+
+1. **Site-wide providers** that wrap both shell and pages—e.g. `ModalProvider` wrapping everything that can open modals.
+2. **Global shell** that should appear on (almost) every route—e.g. `NavBarShell` inside **`Suspense`** with a lightweight fallback (spinner) so async work in the nav does not block the rest of the document from streaming where applicable.
+3. **`{children}`** — the active route segment’s page tree; keep it as a direct sibling to other persistent shell regions when they share the same provider.
+4. **Global portal UI** — e.g. a single `<Modal />` **after** `{children}` but still inside `ModalProvider`, matching the reference.
+
+**Rules:**
+
+- One `ModalProvider` + one `<Modal />` at the root unless the product intentionally uses a different modal system in a subtree (not the Application default).
+- Prefer **`Suspense`** around components that suspend or that you want to isolate with a dedicated fallback; avoid wrapping `{children}` in Suspense at the root unless you have a deliberate full-page loading UX.
+
+## 6) Nested layouts (when you add them)
+
+- Nested `layout.tsx` files wrap **only** their segment: import segment providers, render segment chrome, then `{children}`.
+- Do not re-import `globals.css` or re-apply all font variables unless a subtree truly needs a divergent shell (normally **never** at nested levels—inherit from root).
+
+## 7) What not to put in layouts
+
+- Data fetching for a single page’s content (belongs in `page.tsx` or a server component colocated with that route).
+- Auth-only redirects for one route (prefer middleware or page-level checks unless the entire subtree is gated the same way).
+- Heavy client trees—push to `_components` and import lean wrappers into the layout.
+
+## 8) Checklist for new or edited layouts
+
+- [ ] Default export wraps `{children}` (and any slots) correctly.
+- [ ] Root: single `html`/`body`, fonts + global body classes, `globals.css` imported once here.
+- [ ] Providers wrap every consumer that needs them; portal siblings (`Modal`) remain inside the same provider as openers.
+- [ ] `metadata` / `viewport` updated when product name or scaling policy changes.
+- [ ] No page-specific business UI creeping into the root shell.

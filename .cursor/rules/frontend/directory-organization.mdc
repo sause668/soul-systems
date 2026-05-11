@@ -1,0 +1,52 @@
+---
+description: Enforce project directory organization for app, domain, and shared layers
+globs: "{src/app/**,src/lib/**}"
+alwaysApply: false
+---
+# Directory Organization
+
+## Required layout
+- Keep all routes under `src/app` with route groups for domains (example: `(classes)`, `(students)`, `(appointments)`). Root domain ('/') should be in `(_home)` route group.
+- Use `_actions` for server actions, `_components` for UI, `_context` for providers local to a route group.
+- Keep shared infrastructure in `src/lib` (Prisma client, cross-cutting runtime modules).
+
+## Domain-first boundaries
+- Prefer domain folders over generic folders.
+- Do not import deep route internals across unrelated route groups unless extracted to `src/app/lib` or `src/lib`.
+
+## Naming conventions
+- Use `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx` only for App Router semantics.
+- Name components by feature purpose (`StudentDashboard.tsx`, `CreateAppointment.tsx`).
+- Keep conversion/utility modules in `src/app/lib` with descriptive names.
+
+## Pages
+- Colocate each route with its own `page.tsx` (and `layout.tsx` when the segment needs shared chrome or providers).
+- Keep pages thin: load or receive data, compose `_components`, delegate mutations to `_actions`. Avoid large inline UI trees in `page.tsx` when a feature component folder is clearer.
+- Use route-group folders `(domain)` for URL-neutral grouping; use dynamic segments like `[courseId]` only when the URL carries an id.
+
+## Components (feature folders and sections)
+- For a non-trivial screen or widget, use one folder under the route group’s `_components` named after the feature (PascalCase), for example `src/app/(classes)/_components/Course/`.
+- Put a single **root** component file in that folder with the **same name as the folder** (e.g. `Course/Course.tsx`). That file composes layout and wires props; it should stay relatively small.
+- Split the UI into **one file per logical section** of that feature (header, tabs/options, list panels, etc.). Name each file after that section in PascalCase followed by the root component initial (e.g. `HeaderC.tsx`, `OptionsC.tsx`, `GradesC.tsx`, `BehaviorsC.tsx`, `AssignmentsC.tsx`, `GroupsC.tsx`, `AnnouncementsC.tsx`). If this conflicts with 
+- Import sections from the root with relative paths (`./Header`, `./Grades`). Keep section files focused on one area of the feature; shared types come from `@/app/lib/definitions` (or domain helpers), not duplicated across every section file unless truly local.
+- Do not flatten dozens of unrelated components into `_components` without a subfolder—group by feature.
+- If a local css file is need add it to the root component folder with the same name as the root component.
+
+Reference layout:
+
+```text
+src/app/(classes)/_components/Course/
+  Course.tsx          # root: composes sections, holds feature-level state if needed
+  Header.tsx          # section
+  Options.tsx         # section
+  Grades.tsx
+  Behaviors.tsx
+  Assignments.tsx
+  Groups.tsx
+  Announcements.tsx
+  Course.css          # add only if necessary
+```
+
+## Change policy
+- New feature = new domain folder structure first, then code.
+- Avoid mixing server and client concerns in the same file unless required by Next.js conventions.

@@ -1,0 +1,62 @@
+---
+description: Core blueprint for building Application-style web apps from scratch
+alwaysApply: true
+---
+
+# Application Blueprint
+
+When generating or refactoring, preserve this architecture:
+
+- Next.js App Router in `src/app` with domain route groups (`(_home)`, `(classes)`, `(students)`, `(appointments)`, etc.)
+- Domain-local `_actions`, `_components`, and `_context` where needed
+- Prisma + PostgreSQL: `prisma/schema.prisma`, config in `prisma.config.ts`, seeds under `prisma/seeds/**`, entry `prisma/seed.ts`
+- Prisma client singleton: `src/lib/prisma.ts`
+- JWT cookie sessions and helpers: `src/app/lib/session.ts`
+- Shared domain types and Zod form contracts: `src/app/lib/definitions.ts`; pure grading/behavior helpers: `src/app/lib/grading.ts`; formatting: `src/app/lib/typeConversion.ts` when used
+- Fonts: `src/app/lib/fonts.ts`; global CSS: `src/app/globals.css`; root shell: `src/app/layout.tsx`
+- Global modals: `ModalProvider` + `<Modal />` in root `layout.tsx`, context in `src/app/(_home)/_context/Modal.tsx`, triggers in `src/app/(_home)/_components/OpenModalComponents/**`
+
+## Implementation order (high level)
+
+1. **Bootstrap** — dependencies and tooling (`.cursor/rules/setup/install-dependencies.mdc`; full sequence `.cursor/skills/bootstrap-dependencies/SKILL.md`).
+2. **Directories** — route groups, `_actions`, `_components`, shared `src/lib` and `src/app/lib` (see `.cursor/rules/frontend/directory-organization.mdc`).
+3. **Database** — schema, migrations, seeds (`.cursor/rules/database/database-setup.mdc`; commands `.cursor/skills/prisma-database-workflow/SKILL.md`).
+4. **Authentication** — session payload, cookie helpers, signup/login/logout actions (`.cursor/rules/authentication/authentication-setup.mdc`; workflow `.cursor/skills/implement-authentication-flow/SKILL.md`).
+5. **Root layout** — metadata, viewport, fonts on `<body>`, global providers (see `.cursor/rules/frontend/layout-structure.mdc`).
+6. **Server actions** — per-domain `_actions` files, validation, revalidation (see `.cursor/rules/frontend/server-action-structure-organization.mdc`).
+7. **Pages and feature components** — thin `page.tsx`, feature folders with section files (`.cursor/rules/frontend/page-component-structure.mdc`). End-to-end feature work: `.cursor/skills/feature-vertical-slice/SKILL.md`.
+8. **Modals** — site-wide portal pattern and colocated `Modals/` trees (`.cursor/rules/frontend/modal-setup-structure.mdc`; add modal `.cursor/skills/add-feature-modal/SKILL.md`).
+9. **CSS and Tailwind** — tokens in `globals.css`, theme usage in components (`.cursor/rules/frontend/css-setup-structure.mdc`; extend tokens `.cursor/skills/extend-design-tokens/SKILL.md`).
+10. **Shared types and helpers** — extend definitions and lib modules as domains grow (see `.cursor/rules/frontend/type-and-domain-lib-organization.mdc`).
+
+## Cursor rules index
+
+| Topic | Rule file |
+|-------|-----------|
+| This blueprint | `.cursor/rules/application-blueprint.mdc` |
+| Install / bootstrap | `.cursor/rules/setup/install-dependencies.mdc` |
+| Folders and route layout | `.cursor/rules/frontend/directory-organization.mdc` |
+| Prisma schema, migrate, seed | `.cursor/rules/database/database-setup.mdc` |
+| Sessions and auth actions | `.cursor/rules/authentication/authentication-setup.mdc` |
+| `layout.tsx` structure | `.cursor/rules/frontend/layout-structure.mdc` |
+| Server actions (classes-style) | `.cursor/rules/frontend/server-action-structure-organization.mdc` |
+| `page.tsx` vs `_components` sections | `.cursor/rules/frontend/page-component-structure.mdc` |
+| Global modals + feature `Modals/` | `.cursor/rules/frontend/modal-setup-structure.mdc` |
+| `globals.css`, fonts, Tailwind in UI | `.cursor/rules/frontend/css-setup-structure.mdc` |
+| Types, Zod, domain lib | `.cursor/rules/frontend/type-and-domain-lib-organization.mdc` |
+
+## Skills index (workflows)
+
+| Task | Skill |
+|------|--------|
+| Full npm / Prisma bootstrap | `.cursor/skills/bootstrap-dependencies/SKILL.md` |
+| Migrate, seed, Studio, deploy DB | `.cursor/skills/prisma-database-workflow/SKILL.md` |
+| Implement session + auth actions | `.cursor/skills/implement-authentication-flow/SKILL.md` |
+| End-to-end domain feature | `.cursor/skills/feature-vertical-slice/SKILL.md` |
+| Add modal UI + triggers | `.cursor/skills/add-feature-modal/SKILL.md` |
+| New colors / fonts / tokens | `.cursor/skills/extend-design-tokens/SKILL.md` |
+| Fix local env / dev server | `.cursor/skills/local-dev-environment/SKILL.md` |
+| Production deploy checklist | `.cursor/skills/production-deploy-checklist/SKILL.md` |
+| Lint + build before push | `.cursor/skills/quality-gate-local/SKILL.md` |
+
+Pair the **rule** (constraints while editing files) with the **skill** (ordered procedure) when both apply.

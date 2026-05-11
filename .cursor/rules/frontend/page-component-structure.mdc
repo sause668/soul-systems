@@ -1,0 +1,64 @@
+---
+description: What page vs component files contain and how to structure them (server page + feature sections)
+globs: "{src/app/**/page.tsx,src/app/**/_components/**/*.tsx,src/app/**/_actions/**/*.tsx}"
+alwaysApply: false
+---
+
+# Page and Component Structure
+
+Use this rule when authoring route `page.tsx` files and feature folders under `_components`. For **ordering work across DB, actions, pages, and UI**, see `.cursor/skills/feature-vertical-slice/SKILL.md`. The course detail flow is the reference: server page at `src/app/(classes)/courses/[courseId]/page.tsx` (import as `@/app/(classes)/courses/[courseId]/page.tsx`) and the feature tree at `src/app/(classes)/_components/Course/**` (`@/app/(classes)/_components/Course/...`).
+
+## `page.tsx` (route entry)
+
+**Role:** Server Component boundary—resolve URL params, verify access, load data, branch on errors, render **one** top-level feature component (or a small set of mutually exclusive roots).
+
+**Structure:**
+
+1. **Imports** — Next helpers (`notFound`), session/auth actions, domain data actions, error/landing shells, feature root(s).
+2. **Default export** — `async function …Page({ params }: { params: Promise<{ … }> })` (use `await params` when the framework types `params` as a Promise).
+3. **Param extraction** — `const { id } = await params` (or equivalent) first.
+4. **Session / auth** — Call server actions (e.g. `getSession()`). On failure, return the appropriate global shell (`Landing`, `ErrorPage`) without leaking internals.
+5. **Role or mode branching** — If the route serves different UIs by role, branch once and call the right data loader + component.
+6. **Data loading** — Call domain server actions only from the page (or nested Server Components), not from client section files. Action are **always** imported from designated `_actions` folder and **not** written on `page.ts`.
+7. **Error and empty states** — `instanceof Error` → error UI; missing resource → `notFound()` where applicable.
+8. **Return** — A single JSX tree whose root is a typed feature component, e.g. `<Course courseData={courseData} />`, passing **serializable** props.
+
+**Do not put in `page.tsx`:** Large layout markup, `'use client'`, feature-local `useState` for UI that belongs in a feature root, or duplicated section markup—push that into `_components`.
+
+<!-- **Reference pattern** (course page): session check → role branch → `getCourseData` / `getCourseStudentData` → `Course` or `CourseStudent` with typed props. -->
+
+## Feature folder under `_components` (e.g. `Course/**`)
+
+**Role:** One folder per major UI feature (PascalCase folder name). Split **by section** of that feature, not one monolithic file.
+
+### Root file (`Course/Course.tsx`)
+
+- Mark with `'use client'` when the feature needs client hooks (`useState`, effects, browser APIs).
+- **Default export** — the composed feature (e.g. `Course`).
+- **Props** — Prefer one typed aggregate prop (e.g. `courseData: CourseData`) from `@/app/lib/definitions` when many sub-pieces share the same loaded shape; destructure inside the root for clarity.
+- **Cross-section state** — State that multiple sections need (e.g. `quarter` / `setQuarter`) lives here and is passed down as props.
+- **Layout only in the root** — Outer wrappers, responsive columns, and ordering of sections belong here.
+- **Composition** — Import sections with relative paths (`./Header`, `./Grades`). No data fetching in the root unless you intentionally add a small client fetch; default is props from the page.
+
+### Section files (`Header.tsx`, `Options.tsx`, `Grades.tsx`, …)
+
+- **One primary concern per file** — e.g. title block, quarter toggle, grade table for a quarter, behaviors list.
+- **Default export** — a component named to match the file.
+- **Props** — Narrow props: only what that section needs (`course`, `students`, `quarter`, etc.). Avoid passing the entire app state.
+- **Presentation + light interaction** — Section-specific UI state can stay local; shared feature state stays in the feature root.
+- **Types** — Import domain types from `@/app/lib/definitions` (or shared helpers), not copy-pasted shapes.
+
+**Do not:** Turn every section into a second full-page orchestrator. Keep sections thin; escalate repeated logic to `@/app/lib` or shared subcomponents.
+
+## Summary table
+
+| Location | Contains |
+|----------|----------|
+| `page.tsx` | Params, session, data fetching, error/not-found branches, single feature root |
+| `Feature/Feature.tsx` | `'use client'` if needed, props destructuring, shared UI state, layout grid, section imports |
+| `Feature/Section.tsx` | One UI slice, narrow props, minimal logic |
+
+## Imports
+
+- Pages and server boundaries: `@/app/...`, `@/app/lib/...`, `@/lib/...` as already used in the project.
+- Inside a feature folder: `./SectionName` for colocated sections.

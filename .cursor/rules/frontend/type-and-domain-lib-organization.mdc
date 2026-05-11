@@ -1,0 +1,47 @@
+---
+description: Organize shared TypeScript types, Zod schemas, and pure domain helpers across definitions.ts, grading.ts, and lib modules
+globs: "{src/app/lib/definitions.ts,src/app/lib/**}"
+alwaysApply: false
+---
+
+# Type and Domain Library Organization
+
+## `definitions.ts` — contracts only
+
+- **Single barrel for domain shapes** used by server actions and UI: interfaces for entities, aggregates, session payloads, and action/form outcomes.
+- **Section headers** group related types (`// User Definitions`, `// Course Definitions`, forms nest next to their entity when practical).
+- **Zod + UI error shapes live together** for forms:
+  - Export `XxxFormSchema` (Zod) and `XxxFormState` (treeified error structure for components) next to each other, matching patterns like `LoginFormSchema` / `LoginFormState`.
+- **Prefer optional fields** (`?:`) on entity interfaces when data is partially loaded or omitted by queries—consistent with existing `User`, `Course`, etc.
+- **Do not put pure calculation/sorting logic here**; keep `definitions.ts` for types and validators only.
+
+## Modules for global functions — (Ex: grades, behaviors, sorting)
+
+- **Import domain types from `./definitions`** only (no UI imports).
+- **Keep module-private constants/helpers** at top (`rubric`, `calcType`, `calcFinalGrade`) unless reused elsewhere.
+- **Export named pure functions**: final grade calculators, letter grades, comparators (`sortStudents`, `sortAssignments`), behavior score → label → CSS utility class name (`convertBehaviorGradeColor` aligns with `globals.css` utilities).
+- **No React/Next APIs** in this file.
+- Group related functions and variables in a new `src/app/lib/<group-name>-helpers.ts` with a specified name.  The ones not grouped go in `global-helpers.ts`.
+
+## Other `src/app/lib` modules
+
+- **`typeConversion.ts`** — formatting and parsing for display/API boundaries (dates, names), not business rules.
+- **`site-data.ts`** — static nav/config copy.
+- **`session.ts`** — auth cookie/JWT only.
+- **`utils.ts`** — shared React hooks / tiny helpers, not domain math.
+
+## When adding a new feature area
+
+1. Add or extend interfaces and optional `FormSchema` / `FormState` pairs in `definitions.ts`.
+2. Add deterministic transforms (grades, priorities, sort orders) in one of the following:
+  - **new** `src/app/lib/<group-name>-helpers.ts`
+  - `src/app/lib/<group-name>-helpers.ts` if related
+  - `global-helpers.ts` if no relations
+3. Wire actions to import types from `@/app/lib/definitions` and call helpers from `@/app/lib/global-helpers` (or the new helper module).
+
+## Anti-patterns
+
+- Duplicating the same interface in a component file instead of extending `definitions.ts`.
+- Embedding Zod schemas inside `_actions` when they belong next to `FormState` in `definitions.ts`.
+- Mixing Prisma client calls into `<group-name>-helpers.ts` or `definitions.ts`.
+- Writing **non-event-handler** functions and variable in components instead of `<group-name>-helpers.ts` or `utils.ts`.

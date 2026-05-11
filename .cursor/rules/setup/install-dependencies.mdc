@@ -1,0 +1,21 @@
+---
+description: Dependency policy and pointer to full bootstrap workflow for the Application
+alwaysApply: true
+---
+
+# Initial Dependency Installation
+
+- Prefer **`npm`** so the lockfile stays consistent across contributors.
+- **`postinstall`** runs `prisma generate` (see `package.json`).
+- **Full bootstrap** (new project, new machine, or detailed command order): follow `.cursor/skills/bootstrap-dependencies/SKILL.md`.
+- **Daily:** `npm run dev`, `npm run lint`, `npm run build`, `npm run start`.
+
+Quick reference after clone:
+
+```bash
+npm install
+npx prisma migrate dev
+npm run dev
+```
+
+Environment required before DB commands: `DATABASE_URL`, `SESSION_SECRET` (see skill for generation and Prisma init).

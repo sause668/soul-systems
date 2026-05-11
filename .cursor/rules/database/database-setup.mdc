@@ -1,0 +1,69 @@
+---
+description: Prisma schema setup, migration, and seed workflow for Application
+globs: "{prisma/schema.prisma,prisma.config.ts,prisma/seed.ts,prisma/seeds/**/*.ts,prisma/migrations/**/*.sql}"
+alwaysApply: false
+---
+
+# Database Setup
+
+Use this workflow when creating or evolving this Application's database layer. **Operational commands** (migrate, seed, reset, Studio, deploy): `.cursor/skills/prisma-database-workflow/SKILL.md`.
+
+## 1) Create or update the schema
+- Define and modify models only in `prisma/schema.prisma`.
+- Keep relations explicit with `@relation(fields: [...], references: [...])`.
+- Use `@unique`, composite ids (`@@id`), and indexes based on domain constraints.
+- Keep naming aligned with domain entities.
+- use `@id @default(autoincrement())` over `@id @default(cuid())` unless instructed otherwise.
+
+## 3) Create and apply migrations
+
+```bash
+npx prisma migrate dev --name <descriptive_migration_name>
+```
+
+- Create one descriptive migration per logical schema change.
+- Review generated SQL under `prisma/migrations/<timestamp>_<name>/migration.sql`.
+- Commit both schema and migration files together.
+
+## 2) Generate Prisma client after schema changes
+
+```bash
+npx prisma generate
+```
+
+- Keep generated client output aligned with project usage in `@/app/generated/prisma/client`.
+
+## 4) Seed database data
+
+```bash
+npx prisma db seed
+```
+
+- Seed command is configured in `prisma.config.ts` as:
+
+```ts
+seed: "tsx prisma/seed.ts"
+```
+
+- Keep `prisma/seed.ts` as the orchestrator only (execution order + client lifecycle).
+- Domain seed executors live in `prisma/seeds/*.ts` (for example `users.ts`, `courses.ts`, `grades.ts`).
+- Static seed datasets live in `prisma/seeds/data/*.ts`.
+
+## 5) Seed organization rules
+- One domain per seed executor file in `prisma/seeds/`.
+- One domain data file per dataset in `prisma/seeds/data/`.
+- Import data constants into the matching domain executor.
+- Keep seed functions deterministic and safe to re-run (prefer upserts/checks over blind inserts when feasible).
+- Maintain explicit seed order in `prisma/seed.ts` to satisfy relational dependencies:
+  users -> families -> courses -> grades -> behaviors -> groups -> appointments -> announcements.
+
+## 6) Useful reset and sync scripts (development)
+
+```bash
+npx prisma migrate reset
+npx prisma db push
+npx prisma studio
+```
+
+- Use `migrate reset` when you need a clean local DB + reseed.
+- Use `db push` only for rapid local iteration when migration history is not the goal.

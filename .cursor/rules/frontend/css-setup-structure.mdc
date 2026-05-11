@@ -1,0 +1,110 @@
+---
+description: CSS and Tailwind setup—globals layers, fonts, root layout wiring, and feature-level styling
+globs: "{src/app/globals.css,src/app/lib/fonts.ts,src/app/layout.tsx,src/app/**/_components/**/*.tsx,src/app/**/*.css}"
+alwaysApply: false
+---
+
+# CSS Setup and Structure
+
+This rule describes **how global styling is set up**, how **fonts** connect to Tailwind, and how **components** should use Tailwind vs shared CSS. Step-by-step token and font changes: `.cursor/skills/extend-design-tokens/SKILL.md`. References include `src/app/globals.css`, `@/app/lib/fonts.ts`, `@/app/layout.tsx`, and `@/app/(classes)/_components/Course/**`.
+
+## 1) Global setup (`src/app/globals.css`)
+
+**Single entry:** Tailwind v4 is activated with `@import "tailwindcss"` at the top.
+
+**Preserve this top-to-bottom structure:**
+
+1. **`@import "tailwindcss"`** — required first line.
+2. **`@theme`** — custom breakpoints (`--breakpoint-*` reset, then `3xs` … `2xl`). Use these names in responsive utilities (`max-md:`, `md:`, `lg:`, etc.).
+- Use template:
+```css
+@theme {
+  --breakpoint-*: initial;
+  --breakpoint-3xs: 20rem; /* (320px) Extra small phones  */
+  --breakpoint-2xs: 30rem; /* (480px) Extra small phones */
+  --breakpoint-xs: 35rem; /* (560px) Small phones */
+  --breakpoint-sm: 40rem; /* (640px) Small phones */
+  --breakpoint-md: 48rem; /* (768px) Tablets */
+  --breakpoint-lg: 55rem; /* (880px) Small laptops */
+  --breakpoint-xl: 60rem; /* (960px) Small laptops */
+  --breakpoint-2xl: 75rem; /* (1200px) Desktop */
+}
+```
+3. **`:root`** — raw semantic palette (`--primary`, `--screenWhite`, `--error`, …). Add new brand colors here first.
+Use template:
+```css 
+:root {
+  --primary: /*primary color*/;
+  --secondary: /*secondary color*/;
+  --screenBlack: #0d0d0d;
+  --screenWhite: #fdfdfd;
+  --screenGrey: #141414;
+  --error: #ff1744;
+}
+```
+4. **`@theme inline`** — bridge to Tailwind: `--color-*` from `:root` vars, `--font-title|subtitle|body|button|input|error` pointing at `--font-*` variables produced by `next/font` on `<body>`.
+5. **`@layer base`** — optional global element rules; keep minimal.
+6. **`@layer components`** — reusable patterns used across routes (`.conBox`, `.btn`, `.formInput`, `.loadingSpinner`, `.navLink`, form layout helpers). Put here when **two or more** features need the same class.
+7. **`@layer utilities`** — small domain-driven utility classes (letter grades, assignment type tints, behavior bands). Reference them from JSX with plain class names (e.g. `finalLetterGrade`, `assignment.type`, `noGrade`).
+8. **`body`** — page background and text color from CSS variables; keep aligned with app shell.
+
+**Do not** import `globals.css` from any file other than root `src/app/layout.tsx`. Do not duplicate token definitions in random CSS files—extend `:root` / `@theme inline` or use Tailwind utilities.
+
+## 2) Fonts (`@/app/lib/fonts.ts`)
+
+- Register each face with `next/font/google` and **`variable: "--font-<kebab-name>"`** so it matches `--font-*` references in `@theme inline` (e.g. `--font-sour-gummy`, `--font-balsamiq-sans`, `--font-roboto-flex`, `--font-delius`, `--font-geist-sans`, `--font-geist-mono`).
+- Export one **camelCase** constant per font (`sourGummy`, `balsamiqSans`, …).
+
+When adding a new font:
+
+1. Add the `next/font` export with a new `--font-*` variable name.
+2. Map it in `globals.css` `@theme inline` (e.g. a new `--font-…` role if needed).
+3. Wire the `.variable` class on `<body>` in `layout.tsx` (see below).
+
+## 3) Root layout wiring (`@/app/layout.tsx`)
+
+- Import `./globals.css` once.
+- Import all font exports from `@/app/lib/fonts`.
+- On `<html>`, keep `lang` appropriate for the app.
+- On `<body>`, concatenate **every** font’s `.variable` class with global utilities, matching the project pattern:
+
+  - `antialiased`, `min-h-screen`, `bg-screenWhite`, `font-body` (maps theme body font).
+
+This makes `--font-*` available everywhere so `font-title`, `font-subtitle`, `font-body`, etc. resolve in Tailwind classes.
+
+## 4) Tailwind usage in components (Course reference)
+
+<!-- `@/app/(classes)/_components/Course/**` is the reference for mixing **layout utilities**, **theme tokens**, **component-layer classes**, and **utility-layer domain classes**. -->
+
+**Layout and spacing:** Prefer Tailwind for flex/grid, gaps, widths, padding, and responsive breakpoints (`flex`, `max-md:flex-col`, `w-[95%]`, `md:w-[40%]`, `gap-2`, …).
+
+**Semantic colors and typography from theme:** Use token-backed utilities such as `bg-screenWhite`, `text-zinc-500`, `font-title`, `font-subtitle`, `font-body` instead of hard-coding hex colors for brand roles.
+
+**Shared component classes from `globals.css`:** Use `@layer components` classes where they already exist—for example `.whiteBox` for bordered cards, `.btn` / `.quarterSelect` / `.quarterSelectLabel` in `Options.tsx`, form patterns in modals elsewhere.
+
+**Domain utilities from `globals.css`:** As an example, in `Grades.tsx` / `Assignments.tsx` / `Behaviors.tsx`, dynamic classes like letter grades (`A`, `B`, …), `noGrade`, or assignment type keys (`HW`, `CW`, `Q`, …) are applied as **string templates** when they map to `@layer utilities` definitions. Keep those class names in sync with `globals.css` only—do not redefine the same tints in feature CSS.
+
+**Stable hooks for structure/testing:** As an example, Course tree uses consistent `id` / class prefixes (`titleConC`, `classConC`, …). Prefer Tailwind for visual layout; use `id` sparingly for meaningful regions when useful.
+
+## 5) Feature-level CSS files (optional)
+
+- Prefer **Tailwind + globals layers** first.
+- If a feature needs scoped rules not worth globalizing, add a colocated file such as `Course/Course.css` and import it only from components that need it (e.g. `Announcements.tsx` importing `./Course.css`).
+- Feature CSS must **not** redefine theme tokens; use `var(--primary)` / theme colors if you need raw CSS, or rely on existing CSS variables from `:root`.
+
+## 6) Decision checklist
+
+| Need | Where it goes |
+|------|----------------|
+| New brand color / font role for whole app | `:root` + `@theme inline` + `fonts.ts` + `layout.tsx` body classes |
+| Reused button/card/form row | `@layer components` in `globals.css` |
+| Grade/type/behavior tint class | `@layer utilities` in `globals.css` |
+| One-off layout in a screen | Tailwind `className` on that component |
+| Rules used only inside one feature folder | Optional `Feature.css` next to the feature, imported locally |
+
+## 7) Anti-patterns
+
+- Importing `globals.css` outside `src/app/layout.tsx`.
+- New `--color-*` usage in JSX without adding the token to `:root` / `@theme inline`.
+- New font in `fonts.ts` without `.variable` on `<body>` and without `@theme inline` mapping.
+- Large bespoke `.css` files that duplicate what Tailwind + `globals.css` layers already provide.

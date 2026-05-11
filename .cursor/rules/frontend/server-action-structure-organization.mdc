@@ -1,0 +1,111 @@
+---
+description: How to write and organize server actions—file split, reads vs mutations, session, validation, and returns
+globs: "src/app/**/_actions/**/*.ts"
+alwaysApply: false
+---
+
+# Server Action Structure and Organization
+
+Write and organize server actions as domain-scoped actions under a route group.
+
+## 1) Where files live
+
+- Place actions in the route group’s `_actions` folder: `src/app/(classes)/_actions/`.
+- **One file per bounded domain entity** (mirror the classes folder):
+  - `course-actions.ts` — course-scoped reads and aggregates (`getCourseData`, `getCourseStudentData`, gradebook loaders, etc.).
+  - `assignment-actions.ts`, `grade-actions.ts`, `group-actions.ts`, `behavior-actions.ts` — CRUD-style operations for that entity.
+- New domains get a new `*-actions.ts` file rather than unrelated functions appended to an arbitrary file.
+
+## 2) File-level directives
+
+- **Mutations and anything invoked directly as a Server Action from the client** — put `'use server'` (or `"use server"`) at the **top of the file** for that module .
+- **Heavy read helpers** may use `'use cache'` **inside** specific exported functions when appropriate. Reads that are only called from Server Components can live in the same file without a file-level `'use server'` if they are not used as client-invoked actions—follow Next.js guidance for the split you need.
+
+## 3) Standard imports (mutations)
+
+Match the classes mutation pattern:
+
+- `prisma` from `@/lib/prisma`
+- `revalidatePath` from `next/cache` after successful writes
+- `verifySession` from `@/app/lib/session`
+- Zod as `import * as z from 'zod'`
+- Schemas and result types from `@/app/lib/definitions` (`*FormSchema`, `*FormState`, `ActionResponse`)
+
+## 4) Per-action structure (mutations)
+
+Each exported mutation should follow a consistent pipeline:
+
+1. **`try` wrapper** — single outer `try`/`catch`; `catch` returns `error as Error`.
+2. **ID / key guards** — reject invalid numeric ids early (e.g. `<= 0`) with a stable `{ errors: ['Key Information not found. …'] } as *FormState` shape when the UI expects form state.
+3. **Session** — `const session = await verifySession()`; if `session instanceof Error`, `throw session` (or handle consistently) so the catch path returns an `Error`.
+4. **Validation** — `SomeFormSchema.safeParse({ ... })`; on failure return `z.treeifyError(validatedFields.error) as *FormState`.
+5. **Prisma** — perform `create` / `update` / `delete` with validated data only.
+   organize data
+6. **Revalidation** — `revalidatePath(...)` for every route that should reflect the change immediately.
+7. **Success** — return `{ message: '...' } as ActionResponse` (or another agreed typed success shape).
+
+**Do not** import React, render JSX, or touch client-only APIs from action files.
+
+## 5) Read actions (`course-actions` pattern)
+
+- Accept **`session: SessionPayload`** (and route params like `courseId: string`) from the **caller** when the page has already verified the session and you need `userId` / `userRoleId` for shaping data—keeps cache boundary explicit.
+- Use **`'use cache'`** inside read-heavy functions when caching is intentional.
+- Use Prisma **`select` / `omit` / `include`** to avoid loading `hashedPassword` and other sensitive or unused fields.
+- **Map Prisma results into shared domain types** (`CourseData`, `GradebookData`, etc.) with explicit objects/loops so consumers never receive raw DB leakage.
+  - Example:
+
+```typescript
+const safeBehaviors: Behavior[] = [];
+if (courseData?.behaviors) {
+  for (const behavior of courseData.behaviors) {
+    safeBehaviors.push({
+      id: behavior.id,
+      studentId: behavior.studentId,
+      attention: behavior.attention ?? undefined,
+      learnability: behavior.learnability ?? undefined,
+      cooperation: behavior.cooperation ?? undefined,
+    });
+  }
+}
+
+const coursePageData: CourseData = {
+  course: safeCourse,
+  students: safeStudents,
+  assignments: safeAssignments,
+  behaviors: safeBehaviors,
+  groups: safeGroups,
+  announcements: safeAnnouncements,
+};
+
+return coursePageData;
+```
+
+- Return **`null`** for missing resources where appropriate; return **`error as Error`** from `catch` for failures.
+
+## 6) Return contracts
+
+- **Mutations:** `ActionResponse` on success; `*FormState` (often from `z.treeifyError`) on validation failure; `Error` from catch; early id guards as `*FormState` with `errors` array when that matches the modal/form handler.
+- **Reads:** Domain payload, `null`, or `Error`—callers (pages) branch with `instanceof Error`, `notFound()`, etc.
+
+Keep return shapes predictable so `_components` and modals can branch without ad hoc parsing.
+
+## 7) `revalidatePath` discipline
+
+- After every successful mutation, call `revalidatePath` for each **pathname** that displays stale data (course page, gradebook, lists).
+- Use the **real URL segment** your App Router uses (e.g. under `(classes)` this is often `/courses/[id]` or related paths). When adding new actions, align with existing routes for that feature so cache invalidation matches user navigation.
+
+## 8) Security and data hygiene
+
+- **Never** trust client-sent role flags for authorization; derive access from `verifySession()` and, where needed, DB checks (teacher owns course, etc.).
+- Omit passwords and internal timestamps from payloads unless the feature truly needs them.
+- Parse string ids with `parseInt` only after validating format if ids come from untrusted input.
+
+## 9) Naming and exports
+
+- Prefer **`createX` / `updateX` / `deleteX`** for mutations and **`getXData` / `getX`** style names for reads.
+- **Always** Use **`export async function`** for consistency when adding new exports.
+
+## 10) Relation to other rules
+
+<!-- - For cross-route conventions, see `.cursor/rules/frontend/server-action-organization.mdc`. -->
+<!-- - Auth/session shape references `@/app/lib/session` and `@/app/lib/definitions` (`SessionPayload`). -->

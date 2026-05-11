@@ -1,0 +1,100 @@
+---
+description: Authentication setup for sessions and user signup/login/logout server actions
+globs: "{src/app/lib/definitions.ts,src/app/lib/session.ts,src/app/**/_actions/user-actions.ts}"
+alwaysApply: false
+---
+
+# Authentication Setup
+
+Use this rule for backend authentication setup only. Do not include frontend pages or UI components.
+
+**Implementation order:** `.cursor/skills/implement-authentication-flow/SKILL.md`.
+
+## 1) Required files and boundaries
+- Keep auth definitions and form schemas in `@/app/lib/definitions`.
+- Keep JWT/cookie session helpers in `@/app/lib/session`.
+- Keep auth server actions in `src/app/**/_actions/user-actions.ts`.
+- Keep Prisma access in server actions only; do not query DB from `session.ts`.
+
+## 2) Required environment variables
+
+```bash
+SESSION_SECRET=<secure-random-string>
+DATABASE_URL=<postgres-connection-string>
+```
+
+- Generate `SESSION_SECRET` with:
+
+```bash
+openssl rand -base64 32
+```
+
+## 3) Required auth definitions in `@/app/lib/definitions`
+- `SessionPayload` (extends `JWTPayload`) with:
+  - `userId: string`
+  - `userRole: string`
+  - `userRoleId: string`
+  - `expiresAt: Date`
+- `ActionResponse` shape for successful action responses.
+- `LoginFormSchema` and `SignupFormSchema` (Zod validation for auth inputs).
+- `LoginFormState` and `SignupFormState` for structured validation/action errors.
+
+## 4) Required session variables and functions in `@/app/lib/session`
+- Read and encode secret:
+  - `const secretKey = process.env.SESSION_SECRET`
+  - `const encodedKey = new TextEncoder().encode(secretKey)`
+- Implement:
+  - `encrypt(payload: SessionPayload)` using `SignJWT` with `HS256` and `7d` expiration.
+  - `decrypt(session: string)` using `jwtVerify`.
+  - `createSession(userId, userRole, userRoleId)` to set `session` cookie.
+  - `verifySession()` to read cookie and return valid `SessionPayload`.
+  - `updateSession()` to refresh cookie expiration.
+  - `deleteSession()` for logout.
+
+Cookie requirements:
+- `httpOnly: true`
+- `secure: true`
+- `sameSite: "lax"`
+- `path: "/"`
+- explicit `expires` value
+
+## 5) Required server actions in `user-actions.ts`
+- `getSession()`:
+  - call `verifySession()`
+  - return typed session or typed error
+- `getUser()`:
+  - read `userId` from verified session
+  - return sanitized user data only
+- `getUserById(userId: string)` and `getUserByEmail(email: string)`:
+  - use Prisma queries with explicit field selection
+  - never return `hashedPassword`
+- `signupUser(...)`:
+  - validate with `SignupFormSchema.safeParse`
+  - reject duplicates by email
+  - hash password with `bcryptjs`
+  - create user record
+  - create session on success
+- `loginUser(email, password)`:
+  - validate with `LoginFormSchema.safeParse`
+  - fetch user with role relations
+  - verify password with bcrypt
+  - resolve `userRoleId` from role relation
+  - create session on success
+- `logoutUser()`:
+  - call `deleteSession()`
+
+## 6) Auth setup scripts
+
+```bash
+npm install jose bcryptjs zod
+npm install @prisma/client @prisma/adapter-pg pg dotenv
+npm install --save-dev prisma tsx @types/pg
+npx prisma generate
+npm run dev
+```
+
+## 7) Security and response rules
+- Never return password hashes from any action response.
+- Validate all auth inputs before DB access.
+- Keep action returns consistent (`ActionResponse`, `LoginFormState`, `SignupFormState`, or `Error`).
+- Enforce role/session checks in server actions, not in UI.
