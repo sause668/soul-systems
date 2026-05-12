@@ -8,8 +8,11 @@ export default async function WorkerPage() {
     redirect("/login");
   }
 
-  const userId = Number(session.userId);
-  const isAdmin = session.userRole === "ADMIN";
+  if (session.userRole === "ADMIN") {
+    redirect("/departments");
+  }
 
-  return <WorkerDashboard userId={userId} isAdmin={isAdmin} />;
+  const userId = Number(session.userId);
+
+  return <WorkerDashboard userId={userId} />;
 }

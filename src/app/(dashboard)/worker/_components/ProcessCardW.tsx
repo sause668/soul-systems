@@ -53,7 +53,7 @@ export function ProcessCardW({
       ) : null}
       <div className="text-[10px] text-[var(--muted)]">
         Operator #{userId}
-        {isAdmin ? " · admin override available in /admin" : ""}
+        {isAdmin ? " · admin override in Admin" : ""}
       </div>
     </div>
   );

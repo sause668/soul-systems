@@ -96,7 +96,9 @@ export async function AdminHome() {
             </table>
           </div>
         </div>
-        <CreateJobFormA />
+        <div id="create-job" className="scroll-mt-24">
+          <CreateJobFormA />
+        </div>
       </section>
     </div>
   );
