@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { computeWorkflowAlerts } from "@/lib/scheduling/alerts";
 import {
   getDepartmentWorkload,
@@ -6,9 +5,9 @@ import {
   getThroughputSummary,
 } from "@/lib/analytics/metrics";
 import { prisma } from "@/lib/prisma";
-import { AlertsW } from "@/app/worker/_components/AlertsW";
-import { CreateJobFormA } from "@/app/admin/_components/CreateJobFormA";
-import { LiveRefresh } from "@/app/worker/_components/LiveRefresh";
+import { AlertsW } from "@/app/(dashboard)/worker/_components/AlertsW";
+import { CreateJobFormA } from "@/app/(dashboard)/admin/_components/CreateJobFormA";
+import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
 
 export async function AdminHome() {
   const [alerts, throughput, statuses, workload, jobs] = await Promise.all([
@@ -28,17 +27,12 @@ export async function AdminHome() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10">
       <LiveRefresh />
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Plant control</p>
-          <h1 className="text-3xl font-semibold">Admin overview</h1>
-          <p className="text-sm text-[var(--muted)]">
-            Throughput, risk alerts, and workload heatmap update live via SSE.
-          </p>
-        </div>
-        <Link href="/worker" className="text-sm font-semibold text-[var(--accent)]">
-          Open floor console →
-        </Link>
+      <header className="flex flex-col gap-2">
+        <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Plant control</p>
+        <h1 className="text-3xl font-semibold">Admin overview</h1>
+        <p className="text-sm text-[var(--muted)]">
+          Throughput, risk alerts, and workload heatmap update live via SSE.
+        </p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-3">

@@ -1,5 +1,5 @@
-import { IssueMaterialFormW } from "@/app/worker/_components/IssueMaterialFormW";
-import { ProcessCardW } from "@/app/worker/_components/ProcessCardW";
+import { IssueMaterialFormW } from "@/app/(dashboard)/worker/_components/IssueMaterialFormW";
+import { ProcessCardW } from "@/app/(dashboard)/worker/_components/ProcessCardW";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 
 type ProcessWithRelations = Prisma.ProcessGetPayload<{

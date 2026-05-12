@@ -1,9 +1,9 @@
 import { computeWorkflowAlerts } from "@/lib/scheduling/alerts";
 import { prisma } from "@/lib/prisma";
 import { getWorkerDepartmentIds } from "@/app/_actions/manufacturing-actions";
-import { LiveRefresh } from "@/app/worker/_components/LiveRefresh";
-import { ProcessQueuesW } from "@/app/worker/_components/ProcessQueuesW";
-import { AlertsW } from "@/app/worker/_components/AlertsW";
+import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
+import { ProcessQueuesW } from "@/app/(dashboard)/worker/_components/ProcessQueuesW";
+import { AlertsW } from "@/app/(dashboard)/worker/_components/AlertsW";
 
 type Props = { userId: number; isAdmin: boolean };
 
