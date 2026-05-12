@@ -30,6 +30,7 @@ export async function actionCompleteProcess(processId: number): Promise<ActionRe
   try {
     await completeProcess({ processId, userId: ctx.userId, isAdmin: ctx.isAdmin });
     revalidatePath("/worker");
+    revalidatePath("/departments");
     revalidatePath("/admin");
     return { ok: true, data: true };
   } catch (e) {
@@ -53,6 +54,7 @@ export async function actionIssueMaterial(input: {
       quantityIssued: input.quantityIssued,
     });
     revalidatePath("/worker");
+    revalidatePath("/departments");
     revalidatePath("/admin");
     return { ok: true, data: true };
   } catch (e) {
@@ -76,6 +78,7 @@ export async function actionCreateJob(input: {
       actorUserId: ctx.userId,
     });
     revalidatePath("/admin");
+    revalidatePath("/departments");
     return { ok: true, data: { jobId: job.id } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
@@ -93,6 +96,7 @@ export async function actionOverrideProcess(
     await adminOverrideProcess({ processId, userId: ctx.userId, status });
     revalidatePath("/admin");
     revalidatePath("/worker");
+    revalidatePath("/departments");
     return { ok: true, data: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };

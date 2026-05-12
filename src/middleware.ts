@@ -6,7 +6,7 @@ const SESSION_COOKIE = "session";
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (!path.startsWith("/worker") && !path.startsWith("/admin")) {
+  if (!path.startsWith("/worker") && !path.startsWith("/admin") && !path.startsWith("/departments")) {
     return NextResponse.next();
   }
 
@@ -30,9 +30,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/worker", request.url));
   }
 
+  if (path.startsWith("/departments") && role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/worker", request.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/worker/:path*", "/admin/:path*"],
+  matcher: ["/worker/:path*", "/admin/:path*", "/departments", "/departments/:path*"],
 };

@@ -1,16 +1,14 @@
 import { computeWorkflowAlerts } from "@/lib/scheduling/alerts";
 import { prisma } from "@/lib/prisma";
 import { getWorkerDepartmentIds } from "@/app/_actions/manufacturing-actions";
-import { LiveRefresh } from "@/app/worker/_components/LiveRefresh";
-import { ProcessQueuesW } from "@/app/worker/_components/ProcessQueuesW";
-import { AlertsW } from "@/app/worker/_components/AlertsW";
+import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
+import { ProcessQueuesW } from "@/app/(dashboard)/worker/_components/ProcessQueuesW";
+import { AlertsW } from "@/app/(dashboard)/worker/_components/AlertsW";
 
-type Props = { userId: number; isAdmin: boolean };
+type Props = { userId: number };
 
-export async function WorkerDashboard({ userId, isAdmin }: Props) {
-  const departmentIds = isAdmin
-    ? (await prisma.department.findMany({ select: { id: true } })).map((d) => d.id)
-    : await getWorkerDepartmentIds(userId);
+export async function WorkerDashboard({ userId }: Props) {
+  const departmentIds = await getWorkerDepartmentIds(userId);
 
   const processes = await prisma.process.findMany({
     where: { departmentId: { in: departmentIds } },
@@ -42,9 +40,7 @@ export async function WorkerDashboard({ userId, isAdmin }: Props) {
         <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Department operations</p>
         <h1 className="text-3xl font-semibold">Worker console</h1>
         <p className="text-sm text-[var(--muted)]">
-          {isAdmin
-            ? "Admin view: all departments. Use /admin for plant-wide analytics."
-            : "Showing queues for your assigned departments only."}
+          Showing queues for your assigned departments only.
         </p>
       </header>
 
@@ -56,13 +52,15 @@ export async function WorkerDashboard({ userId, isAdmin }: Props) {
         <SummaryCard title="Overdue in view" value={overdue.length} tone={overdue.length ? "crit" : "ok"} />
       </section>
 
-      <ProcessQueuesW
-        active={active}
-        queued={queued}
-        overdue={overdue}
-        isAdmin={isAdmin}
-        userId={userId}
-      />
+      <div id="queues" className="scroll-mt-24">
+        <ProcessQueuesW
+          active={active}
+          queued={queued}
+          overdue={overdue}
+          isAdmin={false}
+          userId={userId}
+        />
+      </div>
     </div>
   );
 }

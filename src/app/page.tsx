@@ -3,7 +3,7 @@ import { verifySession } from "@/app/lib/session";
 
 export default async function HomePage() {
   const session = await verifySession();
-  const target = session?.userRole === "ADMIN" ? "/admin" : session ? "/worker" : "/login";
+  const target = session?.userRole === "ADMIN" ? "/departments" : session ? "/worker" : "/login";
 
   return (
     <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">

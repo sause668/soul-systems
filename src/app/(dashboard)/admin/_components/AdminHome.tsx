@@ -6,9 +6,9 @@ import {
   getThroughputSummary,
 } from "@/lib/analytics/metrics";
 import { prisma } from "@/lib/prisma";
-import { AlertsW } from "@/app/worker/_components/AlertsW";
-import { CreateJobFormA } from "@/app/admin/_components/CreateJobFormA";
-import { LiveRefresh } from "@/app/worker/_components/LiveRefresh";
+import { AlertsW } from "@/app/(dashboard)/worker/_components/AlertsW";
+import { CreateJobFormA } from "@/app/(dashboard)/admin/_components/CreateJobFormA";
+import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
 
 export async function AdminHome() {
   const [alerts, throughput, statuses, workload, jobs] = await Promise.all([
@@ -28,17 +28,12 @@ export async function AdminHome() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10">
       <LiveRefresh />
-      <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Plant control</p>
-          <h1 className="text-3xl font-semibold">Admin overview</h1>
-          <p className="text-sm text-[var(--muted)]">
-            Throughput, risk alerts, and workload heatmap update live via SSE.
-          </p>
-        </div>
-        <Link href="/worker" className="text-sm font-semibold text-[var(--accent)]">
-          Open floor console →
-        </Link>
+      <header className="flex flex-col gap-2">
+        <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Plant control</p>
+        <h1 className="text-3xl font-semibold">Admin overview</h1>
+        <p className="text-sm text-[var(--muted)]">
+          Throughput, risk alerts, and workload heatmap update live via SSE.
+        </p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -59,7 +54,12 @@ export async function AdminHome() {
           {workload.map((w) => {
             const intensity = Math.round((w.activeOrQueued / max) * 100);
             return (
-              <div key={w.departmentId} className="rounded-md border border-[var(--border)] p-3 text-sm">
+              <Link
+                key={w.departmentId}
+                href={`/departments?departmentId=${w.departmentId}`}
+                className="block rounded-md border border-[var(--border)] p-3 text-sm transition-colors hover:border-[var(--accent)] hover:bg-[var(--accent-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                aria-label={`Open ${w.name} department workflows`}
+              >
                 <div className="font-medium">{w.name}</div>
                 <div className="mt-2 h-2 rounded-full bg-[var(--border)]">
                   <div
@@ -68,7 +68,7 @@ export async function AdminHome() {
                   />
                 </div>
                 <div className="mt-1 text-xs text-[var(--muted)]">{w.activeOrQueued} active/queued</div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -102,7 +102,9 @@ export async function AdminHome() {
             </table>
           </div>
         </div>
-        <CreateJobFormA />
+        <div id="create-job" className="scroll-mt-24">
+          <CreateJobFormA />
+        </div>
       </section>
     </div>
   );

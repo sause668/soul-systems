@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
   LoginFormSchema,
@@ -177,4 +178,10 @@ export async function loginUser(
 
 export async function logoutUser(): Promise<void> {
   await deleteSession();
+}
+
+/** Clears the session cookie and sends the user to the login page (used by dashboard nav). */
+export async function logoutAndRedirectToLogin(): Promise<void> {
+  await deleteSession();
+  redirect("/login");
 }
