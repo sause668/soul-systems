@@ -8,7 +8,7 @@ type ProcessWithRelations = Prisma.ProcessGetPayload<{
   include: {
     department: true;
     job: { include: { blueprint: true } };
-    processBlueprint: true;
+    processBlueprint: { include: { issueBlueprints: true } };
     issueJobs: true;
   };
 }>;

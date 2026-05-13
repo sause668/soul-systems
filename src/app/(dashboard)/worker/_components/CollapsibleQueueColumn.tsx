@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { IssueMaterialFormW } from "@/app/(dashboard)/worker/_components/IssueMaterialFormW";
+import { PartsRequiredPanel } from "@/app/(dashboard)/worker/_components/PartsRequiredPanel";
 import { ProcessCardW } from "@/app/(dashboard)/worker/_components/ProcessCardW";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 
@@ -9,7 +9,7 @@ type ProcessWithRelations = Prisma.ProcessGetPayload<{
   include: {
     department: true;
     job: { include: { blueprint: true } };
-    processBlueprint: true;
+    processBlueprint: { include: { issueBlueprints: true } };
     issueJobs: true;
   };
 }>;
@@ -19,8 +19,9 @@ type Props = {
   processes: ProcessWithRelations[];
   isAdmin: boolean;
   userId: number;
-  /** Issue forms only for the in-progress (active) step list. */
-  showIssueMaterial?: boolean;
+  stockByPartNumber: Record<string, number>;
+  /** Record-issuance form only on the Active column. Parts list shows on all columns when the step has blueprint lines. */
+  showRecordIssuance?: boolean;
 };
 
 export function CollapsibleQueueColumn({
@@ -28,7 +29,8 @@ export function CollapsibleQueueColumn({
   processes,
   isAdmin,
   userId,
-  showIssueMaterial = false,
+  stockByPartNumber,
+  showRecordIssuance = false,
 }: Props) {
   const panelId = useId();
   const [open, setOpen] = useState(true);
@@ -70,7 +72,11 @@ export function CollapsibleQueueColumn({
           processes.map((p) => (
             <div key={p.id} className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-3">
               <ProcessCardW process={p} isAdmin={isAdmin} userId={userId} />
-              {showIssueMaterial ? <IssueMaterialFormW processId={p.id} /> : null}
+              <PartsRequiredPanel
+                process={p}
+                showRecordIssuance={showRecordIssuance}
+                stockByPartNumber={stockByPartNumber}
+              />
             </div>
           ))
         )}
