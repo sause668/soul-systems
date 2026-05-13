@@ -20,7 +20,9 @@ export async function DepartmentWorkflowsView({ userId, departments, selectedDep
     include: {
       department: true,
       job: { include: { blueprint: true } },
-      processBlueprint: true,
+      processBlueprint: {
+        include: { issueBlueprints: true },
+      },
       issueJobs: true,
     },
     orderBy: [{ jobId: "asc" }, { order: "asc" }],
