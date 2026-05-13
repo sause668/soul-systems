@@ -19,6 +19,7 @@ type Props = {
   processes: ProcessWithRelations[];
   isAdmin: boolean;
   userId: number;
+  stockByPartNumber: Record<string, number>;
   /** Record-issuance form only on the Active column. Parts list shows on all columns when the step has blueprint lines. */
   showRecordIssuance?: boolean;
 };
@@ -28,6 +29,7 @@ export function CollapsibleQueueColumn({
   processes,
   isAdmin,
   userId,
+  stockByPartNumber,
   showRecordIssuance = false,
 }: Props) {
   const panelId = useId();
@@ -70,7 +72,11 @@ export function CollapsibleQueueColumn({
           processes.map((p) => (
             <div key={p.id} className="rounded-lg border border-[var(--border)] bg-[var(--panel)] p-3">
               <ProcessCardW process={p} isAdmin={isAdmin} userId={userId} />
-              <PartsRequiredPanel process={p} showRecordIssuance={showRecordIssuance} />
+              <PartsRequiredPanel
+                process={p}
+                showRecordIssuance={showRecordIssuance}
+                stockByPartNumber={stockByPartNumber}
+              />
             </div>
           ))
         )}

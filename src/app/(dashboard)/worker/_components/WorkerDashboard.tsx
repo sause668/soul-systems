@@ -1,5 +1,9 @@
 import { computeWorkflowAlerts } from "@/lib/scheduling/alerts";
 import { prisma } from "@/lib/prisma";
+import {
+  collectPartNumbersFromProcesses,
+  fetchStockByPartNumber,
+} from "@/lib/inventory/stock-for-processes";
 import { getWorkerDepartmentIds } from "@/app/_actions/manufacturing-actions";
 import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
 import { ProcessQueuesW } from "@/app/(dashboard)/worker/_components/ProcessQueuesW";
@@ -22,6 +26,9 @@ export async function WorkerDashboard({ userId }: Props) {
     },
     orderBy: [{ jobId: "asc" }, { order: "asc" }],
   });
+
+  const partNumbers = collectPartNumbersFromProcesses(processes);
+  const stockByPartNumber = await fetchStockByPartNumber(prisma, partNumbers);
 
   const active = processes.filter((p) => p.status === "ACTIVE");
   const queued = processes.filter((p) => p.status === "QUEUED");
@@ -61,6 +68,7 @@ export async function WorkerDashboard({ userId }: Props) {
           overdue={overdue}
           isAdmin={false}
           userId={userId}
+          stockByPartNumber={stockByPartNumber}
         />
       </div>
     </div>
