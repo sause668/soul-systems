@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutAndRedirectToLogin } from "@/app/_actions/user-actions";
 
@@ -24,18 +23,17 @@ export function DashboardNav({ isAdmin }: Props) {
   const isAdminRoute = pathname.startsWith("/admin");
   const isWorkerRoute = pathname.startsWith("/worker");
   const isDepartmentsRoute = pathname.startsWith("/departments");
+  const isJobsRoute = pathname.startsWith("/jobs");
 
-  const [hash, setHash] = useState("");
-  useEffect(() => {
-    const sync = () => setHash(window.location.hash);
-    sync();
-    window.addEventListener("hashchange", sync);
-    return () => window.removeEventListener("hashchange", sync);
-  }, [pathname]);
-
-  const createJobActive = isAdminRoute && hash === "#create-job";
-
-  const contextLabel = isAdminRoute ? "Admin" : isDepartmentsRoute ? "Workflows" : "Floor";
+  const contextLabel = isAdminRoute
+    ? "Admin"
+    : isDepartmentsRoute
+      ? "Workflows"
+      : isJobsRoute
+        ? pathname.startsWith("/jobs/archives")
+          ? "Job archives"
+          : "Job details"
+        : "Floor";
 
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
@@ -69,13 +67,16 @@ export function DashboardNav({ isAdmin }: Props) {
           </Link>
         )}
         {isAdmin ? (
-          <Link href="/admin" className={linkClass(isAdminRoute && !createJobActive)}>
-            Admin
+          <Link
+            href="/jobs"
+            className={linkClass(isJobsRoute && !pathname.startsWith("/jobs/archives"))}
+          >
+            Job details
           </Link>
         ) : null}
         {isAdmin ? (
-          <Link href="/admin#create-job" className={linkClass(createJobActive)}>
-            Create job
+          <Link href="/admin" className={linkClass(isAdminRoute)}>
+            Admin
           </Link>
         ) : null}
         <button type="button" className={linkClass(false)} onClick={() => router.refresh()}>

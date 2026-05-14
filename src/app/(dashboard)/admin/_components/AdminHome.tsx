@@ -6,7 +6,6 @@ import {
 } from "@/lib/analytics/metrics";
 import { prisma } from "@/lib/prisma";
 import { AlertsW } from "@/app/(dashboard)/worker/_components/AlertsW";
-import AdminHomeCreateJobSection from "./AdminHomeCreateJobSection";
 import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
 import AdminHomeDepartmentWorkloadSection from "./AdminHomeDepartmentWorkloadSection";
 import AdminHomeHeader from "./AdminHomeHeader";
@@ -34,10 +33,7 @@ export async function AdminHome() {
       <AdminHomeMetricsSection throughput={throughput} statuses={statuses} />
       <AlertsW alerts={alerts} />
       <AdminHomeDepartmentWorkloadSection workload={workload} />
-      <section className="grid gap-6 lg:grid-cols-2">
-        <AdminHomeHotJobsSection jobs={jobs} />
-        <AdminHomeCreateJobSection />
-      </section>
+      <AdminHomeHotJobsSection jobs={jobs} />
     </div>
   );
 }

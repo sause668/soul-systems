@@ -10,9 +10,15 @@ type BlueprintOption = { id: number; partNumber: string; timeEstimatePerUnit: nu
 export function CreateJobFormClient({
   blueprints,
   defaultDue,
+  onJobCreated,
+  variant = "default",
 }: {
   blueprints: BlueprintOption[];
   defaultDue: string;
+  /** Called after a successful create (after refresh). Use to close a host modal. */
+  onJobCreated?: () => void;
+  /** `modal` omits the outer panel chrome when shown inside a full-page modal. */
+  variant?: "default" | "modal";
 }) {
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -39,10 +45,15 @@ export function CreateJobFormClient({
     setConfirmOpen(true);
   }
 
+  const formClass =
+    variant === "modal"
+      ? "flex flex-col gap-3 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 text-sm"
+      : "panel flex flex-col gap-3 p-4 text-sm";
+
   return (
     <>
-      <form onSubmit={onFormSubmit} className="panel flex flex-col gap-3 p-4 text-sm" id="create-job-form">
-        <div className="font-semibold">Create job</div>
+      <form onSubmit={onFormSubmit} className={formClass} id="create-job-form">
+        <div className="font-semibold">{variant === "modal" ? "Blueprint & schedule" : "Create job"}</div>
         <label className="flex flex-col gap-1">
           <span className="text-[var(--muted)]">Blueprint</span>
           <select
@@ -115,6 +126,7 @@ export function CreateJobFormClient({
             if (due) due.value = defaultDue;
           }
           router.refresh();
+          onJobCreated?.();
         }}
       />
     </>

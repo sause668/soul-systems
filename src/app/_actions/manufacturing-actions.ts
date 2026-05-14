@@ -7,7 +7,9 @@ import {
   adminOverrideProcess,
   completeProcess,
   createJobFromBlueprint,
+  deleteJob,
   recordMaterialIssue,
+  updateJobDueAndUnits,
 } from "@/lib/workflow/job-service";
 import type { ActionResponse } from "@/app/lib/definitions";
 
@@ -79,7 +81,49 @@ export async function actionCreateJob(input: {
     });
     revalidatePath("/admin");
     revalidatePath("/departments");
+    revalidatePath("/jobs");
     return { ok: true, data: { jobId: job.id } };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function actionUpdateJob(input: {
+  jobId: number;
+  dueDate: string;
+  numOfUnits: number;
+}): Promise<ActionResponse> {
+  const ctx = await authContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+  if (!ctx.isAdmin) return { ok: false, error: "Forbidden" };
+  try {
+    await updateJobDueAndUnits({
+      jobId: input.jobId,
+      dueDate: new Date(input.dueDate),
+      numOfUnits: input.numOfUnits,
+      actorUserId: ctx.userId,
+    });
+    revalidatePath("/admin");
+    revalidatePath("/departments");
+    revalidatePath("/worker");
+    revalidatePath("/jobs");
+    return { ok: true, data: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function actionDeleteJob(jobId: number): Promise<ActionResponse> {
+  const ctx = await authContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+  if (!ctx.isAdmin) return { ok: false, error: "Forbidden" };
+  try {
+    await deleteJob({ jobId, actorUserId: ctx.userId });
+    revalidatePath("/admin");
+    revalidatePath("/departments");
+    revalidatePath("/worker");
+    revalidatePath("/jobs");
+    return { ok: true, data: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
   }
