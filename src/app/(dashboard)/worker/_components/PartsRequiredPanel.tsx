@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { actionIssueMaterial } from "@/app/_actions/manufacturing-actions";
+import { ConfirmActionModal } from "@/app/(dashboard)/_components/ConfirmActionModal";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 import {
   buildPartRequirementRows,
@@ -50,25 +51,22 @@ function RecordIssuanceInModal({
   stockByPartNumber: Record<string, number>;
 }) {
   const router = useRouter();
-  const [pending, start] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [draft, setDraft] = useState<{ partNumber: string; quantityIssued: number } | null>(null);
 
   return (
     <form
+      ref={formRef}
       className="flex flex-col gap-3 text-sm"
       onSubmit={(e) => {
         e.preventDefault();
-        const form = e.currentTarget;
-        const fd = new FormData(form);
+        const fd = new FormData(e.currentTarget);
         const partNumber = String(fd.get("partNumber") ?? "").trim();
         const qty = Number(fd.get("quantity") ?? 0);
-        if (!partNumber) return;
-        start(async () => {
-          await actionIssueMaterial({ processId, partNumber, quantityIssued: qty });
-          if (form.isConnected) {
-            form.reset();
-          }
-          router.refresh();
-        });
+        if (!partNumber || !Number.isFinite(qty) || qty < 1) return;
+        setDraft({ partNumber, quantityIssued: qty });
+        setConfirmOpen(true);
       }}
     >
       <div className="font-semibold text-[var(--foreground)]">Record issuance</div>
@@ -105,12 +103,40 @@ function RecordIssuanceInModal({
         </label>
         <button
           type="submit"
-          disabled={pending}
+          disabled={confirmOpen}
           className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {pending ? "Saving…" : "Save issuance"}
+          Save issuance
         </button>
       </div>
+      <ConfirmActionModal
+        open={confirmOpen}
+        title="Record material issuance?"
+        message={
+          draft
+            ? `This will record ${draft.quantityIssued} unit(s) issued for part ${draft.partNumber} on process #${processId}. Stock and issuance totals in the database will be updated.`
+            : ""
+        }
+        confirmLabel="Record issuance"
+        cancelLabel="Cancel"
+        variant="default"
+        onCancel={() => {
+          setConfirmOpen(false);
+          setDraft(null);
+        }}
+        onConfirm={async () => {
+          if (!draft) return;
+          const res = await actionIssueMaterial({
+            processId,
+            partNumber: draft.partNumber,
+            quantityIssued: draft.quantityIssued,
+          });
+          if (!res.ok) throw new Error(res.error);
+          const form = formRef.current;
+          if (form?.isConnected) form.reset();
+          router.refresh();
+        }}
+      />
     </form>
   );
 }
@@ -186,7 +212,6 @@ function PartsDetailModal({
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const remaining = Math.max(0, r.required - r.issued);
                   return (
                     <tr key={r.partNumber} className="border-t border-[var(--border)]">
                       <td className="py-3 pr-4 font-mono text-xs font-medium">{r.partNumber}</td>

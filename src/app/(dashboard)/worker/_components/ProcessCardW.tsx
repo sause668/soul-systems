@@ -1,7 +1,8 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState } from "react";
 import { actionCompleteProcess } from "@/app/_actions/manufacturing-actions";
+import { ConfirmActionModal } from "@/app/(dashboard)/_components/ConfirmActionModal";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 
 type ProcessWithRelations = Prisma.ProcessGetPayload<{
@@ -22,7 +23,7 @@ export function ProcessCardW({
   isAdmin: boolean;
   userId: number;
 }) {
-  const [pending, start] = useTransition();
+  const [confirmComplete, setConfirmComplete] = useState(false);
   const instructions = process.processBlueprint?.processInstructions ?? "—";
   const remaining = process.estimatedMinutes;
 
@@ -42,14 +43,28 @@ export function ProcessCardW({
         Est. remaining work (dept scope): ~{remaining} min · Due {process.dueDate.toDateString()}
       </div>
       {process.status === "ACTIVE" ? (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => start(() => void actionCompleteProcess(process.id))}
-          className="mt-1 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-black disabled:opacity-50"
-        >
-          Mark step complete
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setConfirmComplete(true)}
+            className="mt-1 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-black"
+          >
+            Mark step complete
+          </button>
+          <ConfirmActionModal
+            open={confirmComplete}
+            title="Mark step complete?"
+            message={`This will complete the active step for job #${process.jobId} (${process.job.blueprint.partNumber}) in ${process.department.name} and advance the workflow. This cannot be undone from the floor console.`}
+            confirmLabel="Complete step"
+            cancelLabel="Cancel"
+            variant="default"
+            onCancel={() => setConfirmComplete(false)}
+            onConfirm={async () => {
+              const res = await actionCompleteProcess(process.id);
+              if (!res.ok) throw new Error(res.error);
+            }}
+          />
+        </>
       ) : null}
       <div className="text-[10px] text-[var(--muted)]">
         Operator #{userId}

@@ -231,3 +231,87 @@ export async function adminOverrideProcess(input: {
   publishAfter(updated.jobId, [updated.departmentId]);
   return updated;
 }
+
+export async function deleteJob(input: { jobId: number; actorUserId: number }) {
+  const departmentIds = await prisma.$transaction(async (tx) => {
+    const job = await tx.job.findUnique({
+      where: { id: input.jobId },
+      include: { processes: { select: { departmentId: true } } },
+    });
+    if (!job) throw new Error("Job not found");
+    if (job.status === "COMPLETED") throw new Error("Cannot delete a completed job");
+
+    const ids = [...new Set(job.processes.map((p) => p.departmentId))];
+
+    await writeAudit(tx, {
+      userId: input.actorUserId,
+      action: "JOB_DELETE",
+      entityType: "Job",
+      entityId: String(job.id),
+      metadata: { blueprintId: job.blueprintId },
+    });
+
+    await tx.job.delete({ where: { id: job.id } });
+
+    return ids;
+  });
+
+  publishAfter(input.jobId, departmentIds);
+}
+
+export async function updateJobDueAndUnits(input: {
+  jobId: number;
+  dueDate: Date;
+  numOfUnits: number;
+  actorUserId: number;
+}) {
+  if (input.numOfUnits < 1) throw new Error("Units must be at least 1");
+
+  const result = await prisma.$transaction(async (tx) => {
+    const job = await tx.job.findUnique({
+      where: { id: input.jobId },
+      include: {
+        processes: {
+          orderBy: { order: "asc" },
+          include: { processBlueprint: { select: { timeEstimatePerUnit: true } } },
+        },
+      },
+    });
+    if (!job) throw new Error("Job not found");
+    if (job.status === "COMPLETED") throw new Error("Cannot edit a completed job");
+
+    await tx.job.update({
+      where: { id: job.id },
+      data: { dueDate: input.dueDate, numOfUnits: input.numOfUnits },
+    });
+
+    const deptIds = new Set<number>();
+    for (const p of job.processes) {
+      deptIds.add(p.departmentId);
+      const perUnit = p.processBlueprint?.timeEstimatePerUnit ?? 0;
+      await tx.process.update({
+        where: { id: p.id },
+        data: {
+          dueDate: input.dueDate,
+          estimatedMinutes: perUnit * input.numOfUnits,
+        },
+      });
+    }
+
+    await writeAudit(tx, {
+      userId: input.actorUserId,
+      action: "JOB_UPDATE",
+      entityType: "Job",
+      entityId: String(job.id),
+      metadata: {
+        dueDate: input.dueDate.toISOString(),
+        numOfUnits: input.numOfUnits,
+      },
+    });
+
+    return { jobId: job.id, departmentIds: [...deptIds] };
+  });
+
+  publishAfter(result.jobId, result.departmentIds);
+  return result;
+}
