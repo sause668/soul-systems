@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { ConfirmActionModal } from "@/app/(dashboard)/_components/ConfirmActionModal";
+import { ConfirmActionModal } from "@/app/(user-site)/_components/ConfirmActionModal";
 import { actionDeleteJob, actionUpdateJob } from "@/app/_actions/manufacturing-actions";
 import type { JobDetailsClientRow } from "@/lib/jobs/job-details-list";
 

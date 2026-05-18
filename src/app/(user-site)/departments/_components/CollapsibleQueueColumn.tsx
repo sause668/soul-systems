@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, useState } from "react";
-import { PartsRequiredPanel } from "@/app/(dashboard)/worker/_components/PartsRequiredPanel";
-import { ProcessCardW } from "@/app/(dashboard)/worker/_components/ProcessCardW";
+import { PartsRequiredPanel } from "@/app/(user-site)/departments/_components/PartsRequiredPanel";
+import { ProcessCardW } from "@/app/(user-site)/departments/_components/ProcessCardW";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 
 type ProcessWithRelations = Prisma.ProcessGetPayload<{

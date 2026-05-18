@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { verifySession } from "@/app/lib/session";
 import { prisma } from "@/lib/prisma";
-import { DepartmentWorkflowsView } from "@/app/(dashboard)/departments/_components/DepartmentWorkflowsView";
+import { DepartmentWorkflowsView } from "@/app/(user-site)/departments/_components/DepartmentWorkflowsView";
 
 export default async function DepartmentsPage({
   searchParams,
@@ -13,7 +13,7 @@ export default async function DepartmentsPage({
     redirect("/login");
   }
   if (session.userRole !== "ADMIN") {
-    redirect("/worker");
+    redirect("/dashboard");
   }
 
   const params = await searchParams;

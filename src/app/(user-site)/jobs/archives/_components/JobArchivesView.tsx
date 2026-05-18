@@ -1,4 +1,4 @@
-import JobArchivesSearchableTable from "@/app/(dashboard)/jobs/_components/JobArchivesSearchableTable";
+import JobArchivesSearchableTable from "@/app/(user-site)/jobs/_components/JobArchivesSearchableTable";
 import { jobArchivesToClientRows, type JobArchiveRow } from "@/lib/jobs/job-archives-list";
 
 type Props = {

@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { actionIssueMaterial } from "@/app/_actions/manufacturing-actions";
-import { ConfirmActionModal } from "@/app/(dashboard)/_components/ConfirmActionModal";
+import { ConfirmActionModal } from "@/app/(user-site)/_components/ConfirmActionModal";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 import {
   buildPartRequirementRows,
   hasBlueprintPartRequirements,
   type PartRequirementRow,
-} from "@/app/(dashboard)/worker/_components/parts-required-utils";
+} from "@/app/(user-site)/departments/_components/parts-required-utils";
 
 type ProcessWithParts = Prisma.ProcessGetPayload<{
   include: {

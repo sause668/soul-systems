@@ -10,7 +10,7 @@ async function loginFormAction(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(res.error)}`);
   }
   const session = await verifySession();
-  redirect(session?.userRole === "ADMIN" ? "/departments" : "/worker");
+  redirect("/dashboard");
 }
 
 export default async function LoginPage({

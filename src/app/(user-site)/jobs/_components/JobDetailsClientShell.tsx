@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import CreateJobFullPageModal from "@/app/(dashboard)/admin/_components/CreateJobFullPageModal";
-import JobDetailsSearchableTable from "@/app/(dashboard)/jobs/_components/JobDetailsSearchableTable";
-import JobEditFullPageModal from "@/app/(dashboard)/jobs/_components/JobEditFullPageModal";
+import CreateJobFullPageModal from "@/app/(user-site)/dashboard/_components/CreateJobFullPageModal";
+import JobDetailsSearchableTable from "@/app/(user-site)/jobs/_components/JobDetailsSearchableTable";
+import JobEditFullPageModal from "@/app/(user-site)/jobs/_components/JobEditFullPageModal";
 import type { CreateJobBlueprintOption } from "@/lib/jobs/create-job-form-data";
 import type { JobDetailsClientRow } from "@/lib/jobs/job-details-list";
 

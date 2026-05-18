@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { CreateJobFormClient } from "@/app/(dashboard)/admin/_components/CreateJobFormClient";
+import { CreateJobFormClient } from "@/app/(user-site)/dashboard/_components/CreateJobFormClient";
 import type { CreateJobBlueprintOption } from "@/lib/jobs/create-job-form-data";
 
 type Props = {

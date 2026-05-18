@@ -1,4 +1,4 @@
-import { CollapsibleQueueColumn } from "@/app/(dashboard)/worker/_components/CollapsibleQueueColumn";
+import { CollapsibleQueueColumn } from "@/app/(user-site)/departments/_components/CollapsibleQueueColumn";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 
 type ProcessWithRelations = Prisma.ProcessGetPayload<{

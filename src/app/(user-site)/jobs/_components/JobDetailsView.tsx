@@ -1,4 +1,4 @@
-import JobDetailsClientShell from "@/app/(dashboard)/jobs/_components/JobDetailsClientShell";
+import JobDetailsClientShell from "@/app/(user-site)/jobs/_components/JobDetailsClientShell";
 import { jobDetailsToClientRows, type JobDetailsRow } from "@/lib/jobs/job-details-list";
 import type { CreateJobBlueprintOption } from "@/lib/jobs/create-job-form-data";
 
