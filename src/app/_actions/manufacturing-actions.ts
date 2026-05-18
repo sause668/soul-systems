@@ -31,9 +31,8 @@ export async function actionCompleteProcess(processId: number): Promise<ActionRe
   if (!ctx.ok) return { ok: false, error: ctx.error };
   try {
     await completeProcess({ processId, userId: ctx.userId, isAdmin: ctx.isAdmin });
-    revalidatePath("/worker");
+    revalidatePath("/dashboard");
     revalidatePath("/departments");
-    revalidatePath("/admin");
     return { ok: true, data: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
@@ -55,9 +54,8 @@ export async function actionIssueMaterial(input: {
       partNumber: input.partNumber,
       quantityIssued: input.quantityIssued,
     });
-    revalidatePath("/worker");
+    revalidatePath("/dashboard");
     revalidatePath("/departments");
-    revalidatePath("/admin");
     return { ok: true, data: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
@@ -79,7 +77,7 @@ export async function actionCreateJob(input: {
       dueDate: new Date(input.dueDate),
       actorUserId: ctx.userId,
     });
-    revalidatePath("/admin");
+    revalidatePath("/dashboard");
     revalidatePath("/departments");
     revalidatePath("/jobs");
     return { ok: true, data: { jobId: job.id } };
@@ -103,9 +101,8 @@ export async function actionUpdateJob(input: {
       numOfUnits: input.numOfUnits,
       actorUserId: ctx.userId,
     });
-    revalidatePath("/admin");
+    revalidatePath("/dashboard");
     revalidatePath("/departments");
-    revalidatePath("/worker");
     revalidatePath("/jobs");
     return { ok: true, data: true };
   } catch (e) {
@@ -119,9 +116,8 @@ export async function actionDeleteJob(jobId: number): Promise<ActionResponse> {
   if (!ctx.isAdmin) return { ok: false, error: "Forbidden" };
   try {
     await deleteJob({ jobId, actorUserId: ctx.userId });
-    revalidatePath("/admin");
+    revalidatePath("/dashboard");
     revalidatePath("/departments");
-    revalidatePath("/worker");
     revalidatePath("/jobs");
     return { ok: true, data: true };
   } catch (e) {
@@ -138,8 +134,7 @@ export async function actionOverrideProcess(
   if (!ctx.isAdmin) return { ok: false, error: "Forbidden" };
   try {
     await adminOverrideProcess({ processId, userId: ctx.userId, status });
-    revalidatePath("/admin");
-    revalidatePath("/worker");
+    revalidatePath("/dashboard");
     revalidatePath("/departments");
     return { ok: true, data: true };
   } catch (e) {

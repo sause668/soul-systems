@@ -6,6 +6,7 @@ import { logoutAndRedirectToLogin } from "@/app/_actions/user-actions";
 
 type Props = {
   isAdmin: boolean;
+  departmentLabel?: string;
 };
 
 function linkClass(active: boolean) {
@@ -17,29 +18,30 @@ function linkClass(active: boolean) {
   ].join(" ");
 }
 
-export function DashboardNav({ isAdmin }: Props) {
+export function DashboardNav({ isAdmin, departmentLabel }: Props) {
   const pathname = usePathname();
   const router = useRouter();
-  const isAdminRoute = pathname.startsWith("/admin");
-  const isWorkerRoute = pathname.startsWith("/worker");
+  const isHomeRoute = pathname === "/dashboard" || pathname === "/dashboard/";
   const isDepartmentsRoute = pathname.startsWith("/departments");
   const isJobsRoute = pathname.startsWith("/jobs");
 
-  const contextLabel = isAdminRoute
-    ? "Admin"
-    : isDepartmentsRoute
-      ? "Workflows"
-      : isJobsRoute
-        ? pathname.startsWith("/jobs/archives")
-          ? "Job archives"
-          : "Job details"
-        : "Floor";
+  const contextLabel = isAdmin
+    ? isHomeRoute
+      ? "Home"
+      : isDepartmentsRoute
+        ? "Workflows"
+        : isJobsRoute
+          ? pathname.startsWith("/jobs/archives")
+            ? "Job Archives"
+            : "Job Details"
+          : "Home"
+    : departmentLabel ?? "Department";
 
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
       <div className="flex min-w-0 items-baseline gap-2">
         <Link
-          href="/"
+          href="/dashboard"
           className="truncate text-sm font-bold tracking-tight text-[var(--foreground)] hover:text-[var(--accent)]"
         >
           Soul Systems
@@ -54,7 +56,7 @@ export function DashboardNav({ isAdmin }: Props) {
         className="flex flex-wrap items-center gap-1 text-sm sm:gap-2"
         aria-label="Primary"
       >
-        <Link href="/" className={linkClass(pathname === "/")}>
+        <Link href="/dashboard" className={linkClass(isHomeRoute)}>
           Home
         </Link>
         {isAdmin ? (
@@ -62,7 +64,7 @@ export function DashboardNav({ isAdmin }: Props) {
             Workflows
           </Link>
         ) : (
-          <Link href="/worker#queues" className={linkClass(isWorkerRoute)}>
+          <Link href="/dashboard#queues" className={linkClass(isHomeRoute)}>
             Queues
           </Link>
         )}
@@ -72,11 +74,6 @@ export function DashboardNav({ isAdmin }: Props) {
             className={linkClass(isJobsRoute && !pathname.startsWith("/jobs/archives"))}
           >
             Job details
-          </Link>
-        ) : null}
-        {isAdmin ? (
-          <Link href="/admin" className={linkClass(isAdminRoute)}>
-            Admin
           </Link>
         ) : null}
         <button type="button" className={linkClass(false)} onClick={() => router.refresh()}>

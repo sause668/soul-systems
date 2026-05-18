@@ -4,18 +4,23 @@ import {
   collectPartNumbersFromProcesses,
   fetchStockByPartNumber,
 } from "@/lib/inventory/stock-for-processes";
-import { getWorkerDepartmentIds } from "@/app/_actions/manufacturing-actions";
-import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
-import { ProcessQueuesW } from "@/app/(dashboard)/worker/_components/ProcessQueuesW";
-import { AlertsW } from "@/app/(dashboard)/worker/_components/AlertsW";
+import { LiveRefresh } from "@/app/(user-site)/departments/_components/LiveRefresh";
+import { ProcessQueuesW } from "@/app/(user-site)/departments/_components/ProcessQueuesW";
+import { AlertsW } from "@/app/(user-site)/departments/_components/AlertsW";
+import { DepartmentSelector } from "@/app/(user-site)/departments/_components/DepartmentSelector";
 
-type Props = { userId: number };
+type Props = {
+  userId: number;
+  departments: { id: number; name: string }[];
+  selectedDepartmentId: number;
+};
 
-export async function WorkerDashboard({ userId }: Props) {
-  const departmentIds = await getWorkerDepartmentIds(userId);
+export async function DepartmentWorkflowsView({ userId, departments, selectedDepartmentId }: Props) {
+  const selected = departments.find((d) => d.id === selectedDepartmentId);
+  const selectedName = selected?.name ?? "Department";
 
   const processes = await prisma.process.findMany({
-    where: { departmentId: { in: departmentIds } },
+    where: { departmentId: selectedDepartmentId },
     include: {
       department: true,
       job: { include: { blueprint: true } },
@@ -38,22 +43,29 @@ export async function WorkerDashboard({ userId }: Props) {
     (p) => (p.status === "ACTIVE" || p.status === "QUEUED") && p.dueDate < today,
   );
 
-  const alerts = await computeWorkflowAlerts(
-    departmentIds.length === 1 ? departmentIds[0] : undefined,
-  );
+  const alerts = await computeWorkflowAlerts(selectedDepartmentId);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10">
       <LiveRefresh />
       <header className="flex flex-col gap-2">
-        <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Department operations</p>
-        <h1 className="text-3xl font-semibold">Worker console</h1>
+        <p className="text-xs uppercase tracking-wide text-[var(--muted)]">Admin · by department</p>
+        <h1 className="text-3xl font-semibold">Department Workflows</h1>
         <p className="text-sm text-[var(--muted)]">
-          Showing queues for your assigned departments only.
+          Choose a department to inspect active and queued steps. Actions run as you; use{" "}
+          <span className="font-medium text-[var(--foreground)]">Admin</span> for plant-wide tools.
         </p>
       </header>
 
-      <AlertsW alerts={alerts.filter((a) => !a.departmentId || departmentIds.includes(a.departmentId))} />
+      <section className="panel p-4">
+        <div className="mb-3 text-sm font-semibold text-[var(--muted)]">Department</div>
+        <DepartmentSelector departments={departments} selectedId={selectedDepartmentId} />
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          Viewing: <span className="font-medium text-[var(--foreground)]">{selectedName}</span>
+        </p>
+      </section>
+
+      <AlertsW alerts={alerts} />
 
       <section className="grid gap-4 lg:grid-cols-3">
         <SummaryCard title="Active" value={active.length} tone="ok" />
@@ -66,7 +78,7 @@ export async function WorkerDashboard({ userId }: Props) {
           active={active}
           queued={queued}
           overdue={overdue}
-          isAdmin={false}
+          isAdmin
           userId={userId}
           stockByPartNumber={stockByPartNumber}
         />

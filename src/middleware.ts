@@ -7,8 +7,7 @@ const SESSION_COOKIE = "session";
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (
-    !path.startsWith("/worker") &&
-    !path.startsWith("/admin") &&
+    !path.startsWith("/dashboard") &&
     !path.startsWith("/departments") &&
     !path.startsWith("/jobs")
   ) {
@@ -31,21 +30,17 @@ export async function middleware(request: NextRequest) {
   }
 
   const role = verified.payload.userRole;
-  if (path.startsWith("/admin") && role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/worker", request.url));
-  }
-
   if (path.startsWith("/departments") && role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/worker", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   if (path.startsWith("/jobs") && role !== "ADMIN") {
-    return NextResponse.redirect(new URL("/worker", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/worker/:path*", "/admin/:path*", "/departments", "/departments/:path*", "/jobs", "/jobs/:path*"],
+  matcher: ["/dashboard/:path*", "/dashboard", "/departments", "/departments/:path*", "/jobs", "/jobs/:path*"],
 };

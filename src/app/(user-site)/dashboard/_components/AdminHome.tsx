@@ -5,8 +5,8 @@ import {
   getThroughputSummary,
 } from "@/lib/analytics/metrics";
 import { prisma } from "@/lib/prisma";
-import { AlertsW } from "@/app/(dashboard)/worker/_components/AlertsW";
-import { LiveRefresh } from "@/app/(dashboard)/worker/_components/LiveRefresh";
+import { AlertsW } from "@/app/(user-site)/departments/_components/AlertsW";
+import { LiveRefresh } from "@/app/(user-site)/departments/_components/LiveRefresh";
 import AdminHomeDepartmentWorkloadSection from "./AdminHomeDepartmentWorkloadSection";
 import AdminHomeHeader from "./AdminHomeHeader";
 import AdminHomeHotJobsSection from "./AdminHomeHotJobsSection";

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { verifySession } from "@/app/lib/session";
 import { getCreateJobFormData } from "@/lib/jobs/create-job-form-data";
 import { getJobDetailsList } from "@/lib/jobs/job-details-list";
-import JobDetailsView from "@/app/(dashboard)/jobs/_components/JobDetailsView";
+import JobDetailsView from "@/app/(user-site)/jobs/_components/JobDetailsView";
 
 export default async function JobsPage() {
   const session = await verifySession();
@@ -10,7 +10,7 @@ export default async function JobsPage() {
     redirect("/login");
   }
   if (session.userRole !== "ADMIN") {
-    redirect("/worker");
+    redirect("/dashboard");
   }
 
   const [rows, createJobData] = await Promise.all([getJobDetailsList(), getCreateJobFormData()]);
