@@ -24,17 +24,20 @@ export function DashboardNav({ isAdmin, departmentLabel }: Props) {
   const isHomeRoute = pathname === "/dashboard" || pathname === "/dashboard/";
   const isDepartmentsRoute = pathname.startsWith("/departments");
   const isJobsRoute = pathname.startsWith("/jobs");
+  const isBlueprintsRoute = pathname.startsWith("/blueprints");
 
   const contextLabel = isAdmin
     ? isHomeRoute
       ? "Home"
       : isDepartmentsRoute
         ? "Workflows"
-        : isJobsRoute
-          ? pathname.startsWith("/jobs/archives")
-            ? "Job Archives"
-            : "Job Details"
-          : "Home"
+        : isBlueprintsRoute
+          ? "Blueprints"
+          : isJobsRoute
+            ? pathname.startsWith("/jobs/archives")
+              ? "Job Archives"
+              : "Job Details"
+            : "Home"
     : departmentLabel ?? "Department";
 
   return (
@@ -74,6 +77,11 @@ export function DashboardNav({ isAdmin, departmentLabel }: Props) {
             className={linkClass(isJobsRoute && !pathname.startsWith("/jobs/archives"))}
           >
             Job details
+          </Link>
+        ) : null}
+        {isAdmin ? (
+          <Link href="/blueprints" className={linkClass(isBlueprintsRoute)}>
+            Blueprints
           </Link>
         ) : null}
         <button type="button" className={linkClass(false)} onClick={() => router.refresh()}>
