@@ -9,7 +9,8 @@ export async function middleware(request: NextRequest) {
   if (
     !path.startsWith("/dashboard") &&
     !path.startsWith("/departments") &&
-    !path.startsWith("/jobs")
+    !path.startsWith("/jobs") &&
+    !path.startsWith("/blueprints")
   ) {
     return NextResponse.next();
   }
@@ -38,9 +39,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
+  if (path.startsWith("/blueprints") && role !== "ADMIN") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/dashboard", "/departments", "/departments/:path*", "/jobs", "/jobs/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/dashboard",
+    "/departments",
+    "/departments/:path*",
+    "/jobs",
+    "/jobs/:path*",
+    "/blueprints",
+    "/blueprints/:path*",
+  ],
 };
