@@ -39,6 +39,7 @@ export function DashboardNav({ isAdmin, departmentLabel }: Props) {
   const isDepartmentsRoute = pathname.startsWith("/departments");
   const isJobsRoute = pathname.startsWith("/jobs");
   const isBlueprintsRoute = pathname.startsWith("/blueprints");
+  const isStockRoute = pathname.startsWith("/stock");
   const isJobDetailsRoute = isJobsRoute && !pathname.startsWith("/jobs/archives");
 
   const contextLabel = isAdmin
@@ -46,13 +47,15 @@ export function DashboardNav({ isAdmin, departmentLabel }: Props) {
       ? "Home"
       : isDepartmentsRoute
         ? "Workflows"
-        : isBlueprintsRoute
-          ? "Blueprints"
-          : isJobsRoute
-            ? pathname.startsWith("/jobs/archives")
-              ? "Job Archives"
-              : "Job Details"
-            : "Home"
+        : isStockRoute
+          ? "Stock"
+          : isBlueprintsRoute
+            ? "Blueprints"
+            : isJobsRoute
+              ? pathname.startsWith("/jobs/archives")
+                ? "Job Archives"
+                : "Job Details"
+              : "Home"
     : departmentLabel ?? "Department";
 
   const closeMenu = () => setMenuOpen(false);
@@ -105,6 +108,11 @@ export function DashboardNav({ isAdmin, departmentLabel }: Props) {
           Blueprints
         </Link>
       ) : null}
+      {isAdmin ? (
+        <Link href="/stock" className={linkClass(isStockRoute)} onClick={closeMenu}>
+          Stock
+        </Link>
+      ) : null}
       <button
         type="button"
         className={linkClass(false)}
@@ -140,6 +148,11 @@ export function DashboardNav({ isAdmin, departmentLabel }: Props) {
       {isAdmin ? (
         <Link href="/blueprints" className={menuLinkClass(isBlueprintsRoute)} onClick={closeMenu}>
           Blueprints
+        </Link>
+      ) : null}
+      {isAdmin ? (
+        <Link href="/stock" className={menuLinkClass(isStockRoute)} onClick={closeMenu}>
+          Stock
         </Link>
       ) : null}
       <button
