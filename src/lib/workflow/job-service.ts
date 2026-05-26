@@ -140,6 +140,70 @@ export async function completeProcess(input: {
   return result;
 }
 
+export async function revertProcess(input: {
+  processId: number;
+  userId: number;
+  isAdmin: boolean;
+}) {
+  const result = await prisma.$transaction(async (tx) => {
+    const proc = await tx.process.findUnique({
+      where: { id: input.processId },
+      include: { job: true },
+    });
+    if (!proc) throw new Error("Process not found");
+    if (proc.status !== "ACTIVE") throw new Error("Process is not active");
+    if (proc.order <= 1) throw new Error("This is the first step; nothing to move back to");
+
+    if (!input.isAdmin) {
+      const worker = await tx.worker.findFirst({
+        where: { userId: input.userId, departmentId: proc.departmentId },
+      });
+      if (!worker) throw new Error("Not authorized for this department");
+    }
+
+    const previous = await tx.process.findFirst({
+      where: { jobId: proc.jobId, order: proc.order - 1 },
+    });
+    if (!previous) throw new Error("Previous step not found");
+
+    const now = new Date();
+
+    await tx.process.update({
+      where: { id: proc.id },
+      data: { status: "QUEUED", startedAt: null, completedAt: null, actualMinutes: null },
+    });
+
+    await tx.process.update({
+      where: { id: previous.id },
+      data: { status: "ACTIVE", startedAt: now, completedAt: null, actualMinutes: null },
+    });
+
+    if (proc.job.status === "COMPLETED") {
+      await tx.job.update({
+        where: { id: proc.jobId },
+        data: { status: "IN_PROGRESS", updatedAt: now },
+      });
+    }
+
+    await writeAudit(tx, {
+      userId: input.userId,
+      action: "PROCESS_REVERT",
+      entityType: "Process",
+      entityId: String(proc.id),
+      metadata: { jobId: proc.jobId, previousProcessId: previous.id },
+    });
+
+    return {
+      jobId: proc.jobId,
+      previousProcessId: previous.id,
+      departmentIds: [...new Set([proc.departmentId, previous.departmentId])],
+    };
+  });
+
+  publishAfter(result.jobId, result.departmentIds);
+  return result;
+}
+
 export async function recordMaterialIssue(input: {
   processId: number;
   userId: number;

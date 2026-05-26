@@ -9,6 +9,7 @@ import {
   createJobFromBlueprint,
   deleteJob,
   recordMaterialIssue,
+  revertProcess,
   updateJobDueAndUnits,
 } from "@/lib/workflow/job-service";
 import type { ActionResponse } from "@/app/lib/definitions";
@@ -33,6 +34,20 @@ export async function actionCompleteProcess(processId: number): Promise<ActionRe
     await completeProcess({ processId, userId: ctx.userId, isAdmin: ctx.isAdmin });
     revalidatePath("/dashboard");
     revalidatePath("/departments");
+    return { ok: true, data: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function actionRevertProcess(processId: number): Promise<ActionResponse> {
+  const ctx = await authContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+  try {
+    await revertProcess({ processId, userId: ctx.userId, isAdmin: ctx.isAdmin });
+    revalidatePath("/dashboard");
+    revalidatePath("/departments");
+    revalidatePath("/jobs");
     return { ok: true, data: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
