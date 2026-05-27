@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { actionCompleteProcess } from "@/app/_actions/manufacturing-actions";
+import {
+  actionCompleteProcess,
+  actionRevertProcess,
+} from "@/app/_actions/manufacturing-actions";
 import { ConfirmActionModal } from "@/app/(user-site)/_components/ConfirmActionModal";
 import type { Prisma } from "@/app/generated/prisma/client/client";
 
@@ -24,8 +27,10 @@ export function ProcessCardW({
   userId: number;
 }) {
   const [confirmComplete, setConfirmComplete] = useState(false);
+  const [confirmRevert, setConfirmRevert] = useState(false);
   const instructions = process.processBlueprint?.processInstructions ?? "—";
   const remaining = process.estimatedMinutes;
+  const canMoveBack = process.order > 1;
 
   return (
     <div className="flex flex-col gap-2 text-sm">
@@ -44,13 +49,29 @@ export function ProcessCardW({
       </div>
       {process.status === "ACTIVE" ? (
         <>
-          <button
-            type="button"
-            onClick={() => setConfirmComplete(true)}
-            className="mt-1 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-black"
-          >
-            Mark step complete
-          </button>
+          <div className="mt-1 flex items-stretch gap-1.5">
+            <button
+              type="button"
+              onClick={() => setConfirmComplete(true)}
+              className="flex-1 rounded-md bg-[var(--success)] px-3 py-1.5 text-xs font-semibold text-black"
+            >
+              Mark step complete
+            </button>
+            <button
+              type="button"
+              onClick={() => canMoveBack && setConfirmRevert(true)}
+              disabled={!canMoveBack}
+              title={
+                canMoveBack
+                  ? "Move job back to previous step"
+                  : "This is the first step; cannot move back"
+              }
+              aria-label="Move job back to previous step"
+              className="shrink-0 basis-1/5 min-w-[2.25rem] rounded-md border border-[var(--border)] bg-[var(--panel)] px-2 py-1.5 text-xs font-semibold text-[var(--foreground)] hover:bg-[var(--border)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              ← Back
+            </button>
+          </div>
           <ConfirmActionModal
             open={confirmComplete}
             title="Mark step complete?"
@@ -61,6 +82,19 @@ export function ProcessCardW({
             onCancel={() => setConfirmComplete(false)}
             onConfirm={async () => {
               const res = await actionCompleteProcess(process.id);
+              if (!res.ok) throw new Error(res.error);
+            }}
+          />
+          <ConfirmActionModal
+            open={confirmRevert}
+            title="Move job back a step?"
+            message={`This will return job #${process.jobId} (${process.job.blueprint.partNumber}) from ${process.department.name} to the previous step. The current step will be queued again and the previous step will be reactivated.`}
+            confirmLabel="Move back"
+            cancelLabel="Cancel"
+            variant="default"
+            onCancel={() => setConfirmRevert(false)}
+            onConfirm={async () => {
+              const res = await actionRevertProcess(process.id);
               if (!res.ok) throw new Error(res.error);
             }}
           />
