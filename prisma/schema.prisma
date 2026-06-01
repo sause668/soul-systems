@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/app/generated/prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AppRole {
+  WORKER
+  ADMIN
+}
+
+enum JobStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+enum ProcessStatus {
+  QUEUED
+  ACTIVE
+  COMPLETED
+  SKIPPED
+}
+
+/// Application user (login identity). Password column stores bcrypt hash per ERD `password`.
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique @db.VarChar(128)
+  password  String    @db.VarChar(255)
+  firstName String    @db.VarChar(120)
+  lastName  String    @db.VarChar(120)
+  email     String    @unique @db.VarChar(255)
+  role      AppRole   @default(WORKER)
+  workers   Worker[]
+  admins    Admin[]
+  auditLogs AuditLog[]
+
+  @@index([role])
+  @@map("users")
+}
+
+model Worker {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  departmentId Int
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([departmentId])
+  @@map("workers")
+}
+
+model Admin {
+  id     Int  @id @default(autoincrement())
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("admins")
+}
+
+model Customer {
+  id         Int         @id @default(autoincrement())
+  name       String      @db.VarChar(255)
+  blueprints Blueprint[]
+
+  @@index([name])
+  @@map("customers")
+}
+
+model Department {
+  id                Int                @id @default(autoincrement())
+  name              String             @unique @db.VarChar(120)
+  workers           Worker[]
+  processBlueprints ProcessBlueprint[]
+  processes         Process[]
+
+  @@map("departments")
+}
+
+model Blueprint {
+  id                   Int                  @id @default(autoincrement())
+  customerId           Int
+  partNumber           String               @db.VarChar(120)
+  timeEstimatePerUnit  Int
+  customer             Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  processBlueprints    ProcessBlueprint[]
+  jobs                 Job[]
+
+  @@unique([customerId, partNumber])
+  @@index([customerId])
+  @@index([partNumber])
+  @@map("blueprints")
+}
+
+model ProcessBlueprint {
+  id                  Int               @id @default(autoincrement())
+  departmentId        Int
+  blueprintId       Int
+  order               Int
+  processInstructions String            @db.Text
+  timeEstimatePerUnit Int
+  quantityCompleted   Int               @default(0)
+  department          Department        @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  blueprint           Blueprint         @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  issueBlueprints     IssueBlueprint[]
+  processes           Process[]
+
+  @@index([blueprintId, order])
+  @@index([departmentId])
+  @@map("processBlueprints")
+}
+
+model IssueBlueprint {
+  id                 Int              @id @default(autoincrement())
+  processBlueprintId Int
+  partNumber         String           @db.VarChar(120)
+  quantityNeeded     Int
+  processBlueprint   ProcessBlueprint @relation(fields: [processBlueprintId], references: [id], onDelete: Cascade)
+
+  @@index([processBlueprintId])
+  @@index([partNumber])
+  @@map("issueBlueprints")
+}
+
+model Job {
+  id                     Int           @id @default(autoincrement())
+  blueprintId            Int
+  numOfUnits             Int
+  timeCompletionPerUnit  Int           @default(0)
+  dueDate                DateTime      @db.Date
+  status                 JobStatus     @default(IN_PROGRESS)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  blueprint              Blueprint     @relation(fields: [blueprintId], references: [id], onDelete: Restrict)
+  processes              Process[]
+
+  @@index([blueprintId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+model Process {
+  id                     Int               @id @default(autoincrement())
+  departmentId           Int
+  jobId                  Int
+  dueDate                DateTime          @db.Date
+  timeCompletionPerUnit  Int               @default(0)
+  status                 ProcessStatus     @default(QUEUED)
+  order                  Int
+  processBlueprintId     Int?
+  startedAt              DateTime?
+  completedAt            DateTime?
+  estimatedMinutes       Int               @default(0)
+  actualMinutes          Int?
+  department             Department        @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  job                    Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  processBlueprint       ProcessBlueprint? @relation(fields: [processBlueprintId], references: [id], onDelete: SetNull)
+  issueJobs              IssueJob[]
+
+  @@unique([jobId, order])
+  @@index([departmentId, status])
+  @@index([jobId])
+  @@map("processes")
+}
+
+model IssueJob {
+  id             Int     @id @default(autoincrement())
+  processId      Int
+  partNumber     String  @db.VarChar(120)
+  quantityIssued Int
+  process        Process @relation(fields: [processId], references: [id], onDelete: Cascade)
+
+  @@index([processId])
+  @@index([partNumber])
+  @@map("issueJobs")
+}
+
+model StockPart {
+  id               Int    @id @default(autoincrement())
+  partNumber       String @unique @db.VarChar(120)
+  quantityStocked  Int    @default(0)
+
+  @@index([partNumber])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  action     String   @db.VarChar(160)
+  entityType String   @db.VarChar(80)
+  entityId   String   @db.VarChar(64)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

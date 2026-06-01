@@ -10,6 +10,7 @@ Use this workflow when creating or evolving this Application's database layer. *
 
 ## 1) Create or update the schema
 - Define and modify models only in `prisma/schema.prisma`.
+- Prisma ORM 7: database URL and seed command live in root `prisma.config.ts` (not `schema.prisma` `url`).
 - Keep relations explicit with `@relation(fields: [...], references: [...])`.
 - Use `@unique`, composite ids (`@@id`), and indexes based on domain constraints.
 - Keep naming aligned with domain entities.
@@ -31,7 +32,7 @@ npx prisma migrate dev --name <descriptive_migration_name>
 npx prisma generate
 ```
 
-- Keep generated client output aligned with project usage in `@/app/generated/prisma/client`.
+- Keep generated client output aligned with project usage: import runtime client from `@/app/generated/prisma/client/client` (Prisma 7 `prisma-client` generator).
 
 ## 4) Seed database data
 
